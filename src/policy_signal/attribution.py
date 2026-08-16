@@ -30,25 +30,64 @@ class SpeakerRoleAssigner(Protocol):
 def _attach_question_context(
     segments: Sequence[TranscriptSegment],
 ) -> list[TranscriptSegment]:
-    """Attach the latest reporter turn to the following policy-maker answer."""
+    """Assign stable turn IDs and attach each reporter turn to its answer."""
     result: list[TranscriptSegment] = []
     question_parts: list[str] = []
     latest_question: str | None = None
+    latest_question_turn_id: str | None = None
+    active_role: SpeakerRole | None = None
+    active_turn_id: str | None = None
+    question_index = 0
+    answer_index = 0
+    unknown_index = 0
 
     for segment in segments:
-        if segment.speaker_role == "journalist":
-            if result and result[-1].speaker_role != "journalist":
+        if segment.speaker_role != active_role:
+            active_role = segment.speaker_role
+            if active_role == "journalist":
+                question_index += 1
+                active_turn_id = f"question_{question_index:04d}"
                 question_parts = []
+            elif active_role == "policy_maker":
+                answer_index += 1
+                active_turn_id = f"answer_{answer_index:04d}"
+                if question_parts:
+                    latest_question = " ".join(question_parts).strip()
+                    latest_question_turn_id = f"question_{question_index:04d}"
+                    question_parts = []
+            else:
+                unknown_index += 1
+                active_turn_id = f"unknown_{unknown_index:04d}"
+
+        if segment.speaker_role == "journalist":
             question_parts.append(segment.text.strip())
-            result.append(replace(segment, question_context=None))
+            result.append(
+                replace(
+                    segment,
+                    turn_id=active_turn_id,
+                    question_turn_id=None,
+                    question_context=None,
+                )
+            )
             continue
         if segment.speaker_role == "policy_maker":
-            if question_parts:
-                latest_question = " ".join(question_parts).strip()
-                question_parts = []
-            result.append(replace(segment, question_context=latest_question))
+            result.append(
+                replace(
+                    segment,
+                    turn_id=active_turn_id,
+                    question_turn_id=latest_question_turn_id,
+                    question_context=latest_question,
+                )
+            )
             continue
-        result.append(segment)
+        result.append(
+            replace(
+                segment,
+                turn_id=active_turn_id,
+                question_turn_id=None,
+                question_context=None,
+            )
+        )
     return result
 
 
@@ -68,7 +107,7 @@ class PassthroughRoleAssigner:
         segments: Sequence[TranscriptSegment],
     ) -> list[TranscriptSegment]:
         del audio_path
-        return [
+        attributed = [
             replace(
                 segment,
                 speaker_id=segment.speaker_id or "unattributed_policy_maker",
@@ -76,6 +115,7 @@ class PassthroughRoleAssigner:
             )
             for segment in segments
         ]
+        return _attach_question_context(attributed)
 
 
 class PressConferenceRoleAssigner:
@@ -119,8 +159,6 @@ class PressConferenceRoleAssigner:
         attributed: list[TranscriptSegment] = []
         current_role = "policy_maker"
         current_speaker = "policy_maker_0"
-        current_question_parts: list[str] = []
-        latest_question: str | None = None
         journalist_index = 0
 
         for segment in segments:
@@ -129,10 +167,8 @@ class PressConferenceRoleAssigner:
                 journalist_index += 1
                 current_role = "journalist"
                 current_speaker = f"journalist_{journalist_index}"
-                current_question_parts = []
 
             if current_role == "journalist":
-                current_question_parts.append(text)
                 attributed.append(
                     replace(
                         segment,
@@ -144,7 +180,6 @@ class PressConferenceRoleAssigner:
                     )
                 )
                 if "?" in text:
-                    latest_question = " ".join(current_question_parts).strip()
                     current_role = "policy_maker"
                     current_speaker = "policy_maker_0"
                 continue
@@ -156,11 +191,11 @@ class PressConferenceRoleAssigner:
                     speaker_role="policy_maker",
                     role_confidence=0.65,
                     role_source="text",
-                    question_context=latest_question,
+                    question_context=None,
                 )
             )
 
-        return attributed
+        return _attach_question_context(attributed)
 
 
 @dataclass(frozen=True, slots=True)
@@ -305,6 +340,8 @@ class PyannoteRoleAssigner:
                     speaker_role=cls._role(speaker, policy_speaker),
                     role_confidence=min(overlap / max(duration, 0.01), 1.0),
                     role_source="audio",
+                    turn_id=None,
+                    question_turn_id=None,
                     question_context=None,
                     words=tuple(words),
                 )
@@ -357,6 +394,8 @@ class PyannoteRoleAssigner:
                     speaker_role=role,
                     role_confidence=confidence,
                     role_source="audio",
+                    turn_id=None,
+                    question_turn_id=None,
                     question_context=None,
                 )
             )

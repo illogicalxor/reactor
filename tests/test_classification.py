@@ -41,11 +41,15 @@ class HeuristicClassifierTests(unittest.TestCase):
             speaker_role="policy_maker",
             role_confidence=0.95,
             role_source="audio",
+            turn_id="answer_0002",
+            question_turn_id="question_0001",
             question_context="Could rates remain elevated?",
         )
         prediction = self.classifier.classify([segment], "equities")[0]
         self.assertEqual(prediction.speaker_id, "SPEAKER_00")
         self.assertEqual(prediction.role_source, "audio")
+        self.assertEqual(prediction.turn_id, segment.turn_id)
+        self.assertEqual(prediction.question_turn_id, segment.question_turn_id)
         self.assertEqual(prediction.question_context, segment.question_context)
 
 

@@ -113,6 +113,8 @@ class ZeroShotSignalClassifier:
                     speaker_role=segment.speaker_role,
                     role_confidence=segment.role_confidence,
                     role_source=segment.role_source,
+                    turn_id=segment.turn_id,
+                    question_turn_id=segment.question_turn_id,
                     question_context=segment.question_context,
                 )
             )
@@ -196,6 +198,8 @@ class FineTunedSignalClassifier:
                     speaker_role=segment.speaker_role,
                     role_confidence=segment.role_confidence,
                     role_source=segment.role_source,
+                    turn_id=segment.turn_id,
+                    question_turn_id=segment.question_turn_id,
                     question_context=segment.question_context,
                 )
             )
@@ -280,6 +284,8 @@ class HeuristicSignalClassifier:
                     speaker_role=segment.speaker_role,
                     role_confidence=segment.role_confidence,
                     role_source=segment.role_source,
+                    turn_id=segment.turn_id,
+                    question_turn_id=segment.question_turn_id,
                     question_context=segment.question_context,
                 )
             )

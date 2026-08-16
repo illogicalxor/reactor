@@ -33,6 +33,8 @@ class TranscriptSegment:
     role_source: RoleSource = "none"
     question_context: str | None = None
     words: tuple[TranscriptWord, ...] = ()
+    turn_id: str | None = None
+    question_turn_id: str | None = None
 
     @property
     def duration(self) -> float:
@@ -56,6 +58,36 @@ class SegmentPrediction:
     question_context: str | None = None
     relevance_label: RelevanceLabel = "directional"
     relevance_confidence: float = 1.0
+    turn_id: str | None = None
+    question_turn_id: str | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True, slots=True)
+class TurnSignal:
+    """Auditable stance summary for one policy-maker answer or statement turn."""
+
+    turn_id: str
+    question_turn_id: str | None
+    start: float
+    end: float
+    text: str
+    question_context: str | None
+    speaker_id: str | None
+    role_confidence: float
+    label: SignalLabel
+    confidence: float
+    bullish_probability: float
+    bearish_probability: float
+    signal_strength: float
+    low_signal: bool
+    directional_coverage: float
+    segment_count: int
+    directional_segment_count: int
+    neutral_segment_count: int
+    irrelevant_segment_count: int
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -83,8 +115,10 @@ class AnalysisResult:
     neutral_segment_count: int = 0
     irrelevant_segment_count: int = 0
     segments: list[SegmentPrediction] = field(default_factory=list)
+    turns: list[TurnSignal] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         payload = asdict(self)
+        payload["turns"] = [turn.to_dict() for turn in self.turns]
         payload["segments"] = [segment.to_dict() for segment in self.segments]
         return payload

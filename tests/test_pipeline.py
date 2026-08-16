@@ -77,6 +77,28 @@ class PipelineTests(unittest.TestCase):
         merged = merge_transcript_segments(segments)
         self.assertEqual(len(merged), 2)
 
+    def test_does_not_merge_across_answer_turns(self) -> None:
+        segments = [
+            TranscriptSegment(
+                0,
+                3,
+                "First answer.",
+                "en",
+                speaker_role="policy_maker",
+                turn_id="answer_0001",
+            ),
+            TranscriptSegment(
+                3,
+                8,
+                "Second answer.",
+                "en",
+                speaker_role="policy_maker",
+                turn_id="answer_0002",
+            ),
+        ]
+        merged = merge_transcript_segments(segments)
+        self.assertEqual(len(merged), 2)
+
     def test_recent_language_has_more_weight(self) -> None:
         predictions = [
             SegmentPrediction(0, 10, "Earlier easing signal", "bullish", 0.9, 0.1, 0.9),
@@ -154,7 +176,17 @@ class PipelineTests(unittest.TestCase):
         self.assertFalse(any("Reuters" in item.text for item in result.segments))
         answer = next(item for item in result.segments if item.start == 12)
         self.assertIn("Reuters", answer.question_context or "")
+        self.assertEqual(answer.turn_id, "answer_0002")
+        self.assertEqual(answer.question_turn_id, "question_0001")
         self.assertLess(result.directional_coverage, 1.0)
+
+        self.assertEqual([turn.turn_id for turn in result.turns], ["answer_0001", "answer_0002"])
+        answer_turn = result.turns[1]
+        self.assertEqual(answer_turn.question_turn_id, "question_0001")
+        self.assertEqual(answer_turn.segment_count, 2)
+        self.assertEqual(answer_turn.directional_segment_count, 1)
+        self.assertEqual(answer_turn.irrelevant_segment_count, 1)
+        self.assertLess(answer_turn.directional_coverage, 1.0)
 
     def test_pipeline_abstains_when_nothing_is_directional(self) -> None:
         pipeline = VideoAnalysisPipeline(
@@ -170,6 +202,12 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(result.low_signal)
         self.assertEqual(result.directional_segment_count, 0)
         self.assertEqual(result.irrelevant_segment_count, 1)
+        self.assertEqual(len(result.turns), 1)
+        self.assertEqual(result.turns[0].bullish_probability, 0.5)
+        self.assertEqual(result.turns[0].bearish_probability, 0.5)
+        self.assertTrue(result.turns[0].low_signal)
+        self.assertEqual(result.turns[0].irrelevant_segment_count, 1)
+        self.assertEqual(result.to_dict()["turns"][0]["turn_id"], "answer_0001")
 
     def test_warmup_loads_inference_weights(self) -> None:
         transcriber = StubTranscriber()

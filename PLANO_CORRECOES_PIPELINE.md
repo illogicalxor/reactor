@@ -59,10 +59,14 @@ Implementado neste ciclo:
 - `POLICY_SIGNAL_OFFLINE_RECENCY_HALF_LIFE_SECONDS` permite reativar e calibrar
   decaimento offline explicitamente;
 - há um teste de regressão garantindo que uma fala final arbitrária não receba
-  preferência apenas por estar no fim.
+  preferência apenas por estar no fim;
+- perguntas e respostas recebem IDs ligados por `question_turn_id`;
+- a API preserva uma série `turns` com um sinal para cada fala da autoridade,
+  incluindo respostas neutras ou irrelevantes como 50/50 e `low_signal=true`.
 
-O próximo passo nessa fase é armazenar sinais por turno e por resposta. Um rótulo
-único do evento deve ser uma visão adicional, não substituir a série temporal.
+O rótulo único do evento agora é uma visão adicional e não substitui a série por
+resposta. O próximo passo é manter fronteiras e IDs de turno persistentes entre as
+janelas do WebSocket, em vez de limitá-los a cada janela analisada.
 
 ## Fase 2: separar Chair e jornalistas
 
@@ -70,6 +74,8 @@ Implementado neste ciclo:
 
 - metadados `speaker_id`, `speaker_role`, `role_confidence`, `role_source` e
   `question_context` percorrem ASR, classificação e resposta da API;
+- `turn_id` e `question_turn_id` ligam cada evidência à resposta e à pergunta que a
+  originou;
 - o fallback textual separa introduções explícitas de jornalistas e conserva a
   pergunta como contexto da resposta;
 - o backend opcional `pyannote` faz diarização no áudio, usa a timeline exclusiva
@@ -123,6 +129,7 @@ Campos necessários no domínio:
 - `speaker_confidence`;
 - `face_track_id`;
 - `active_speaker_confidence`;
+- `turn_id`;
 - `question_turn_id`;
 - `role_source` (`audio`, `video`, `voiceprint`, `combined`).
 

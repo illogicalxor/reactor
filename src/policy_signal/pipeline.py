@@ -8,9 +8,9 @@ from pathlib import Path
 
 from .attribution import PressConferenceRoleAssigner, SpeakerRoleAssigner
 from .classification import SignalClassifier
-from .domain import AnalysisResult, SegmentPrediction, TranscriptSegment
+from .domain import AnalysisResult, SegmentPrediction, TranscriptSegment, TurnSignal
 from .media import MediaProcessor
-from .relevance import HeuristicPolicyRelevanceGate, PolicyRelevanceGate
+from .relevance import HeuristicPolicyRelevanceGate, PolicyRelevanceGate, RelevanceAssessment
 from .transcription import Transcriber
 
 
@@ -38,6 +38,8 @@ def merge_transcript_segments(
         same_speaker = (
             previous.speaker_id == segment.speaker_id
             and previous.speaker_role == segment.speaker_role
+            and previous.turn_id == segment.turn_id
+            and previous.question_turn_id == segment.question_turn_id
             and previous.question_context == segment.question_context
         )
         if (
@@ -55,6 +57,8 @@ def merge_transcript_segments(
                 speaker_role=previous.speaker_role,
                 role_confidence=min(previous.role_confidence, segment.role_confidence),
                 role_source=previous.role_source,
+                turn_id=previous.turn_id,
+                question_turn_id=previous.question_turn_id,
                 question_context=previous.question_context,
                 words=previous.words + segment.words,
             )
@@ -63,17 +67,10 @@ def merge_transcript_segments(
     return merged
 
 
-def aggregate_predictions(
+def _aggregate_prediction_probabilities(
     predictions: Sequence[SegmentPrediction],
-    *,
-    asset_context: str,
-    transcript: str,
-    language: str | None,
-    duration_seconds: float,
-    model: str,
-    neutral_margin: float = 0.12,
-    recency_half_life_seconds: float | None = None,
-) -> AnalysisResult:
+    recency_half_life_seconds: float | None,
+) -> tuple[float, float, list[SegmentPrediction]]:
     if not predictions:
         raise EmptySpeechError("No speech was detected in the audio track")
 
@@ -95,9 +92,27 @@ def aggregate_predictions(
         total_weight += weight
         weighted_predictions.append(replace(item, weight=round(weight, 6)))
 
-    # Averaging logits avoids confidence increasing merely because a video is long.
+    # Averaging logits avoids confidence increasing merely because a recording is long.
     bullish = 1.0 / (1.0 + math.exp(-(weighted_logits / total_weight)))
     bearish = 1.0 - bullish
+    return bullish, bearish, weighted_predictions
+
+
+def aggregate_predictions(
+    predictions: Sequence[SegmentPrediction],
+    *,
+    asset_context: str,
+    transcript: str,
+    language: str | None,
+    duration_seconds: float,
+    model: str,
+    neutral_margin: float = 0.12,
+    recency_half_life_seconds: float | None = None,
+) -> AnalysisResult:
+    bullish, bearish, weighted_predictions = _aggregate_prediction_probabilities(
+        predictions,
+        recency_half_life_seconds,
+    )
     label = "bullish" if bullish >= bearish else "bearish"
     signal_strength = abs(bullish - bearish)
     return AnalysisResult(
@@ -118,6 +133,102 @@ def aggregate_predictions(
         unknown_speaker_segment_count=sum(item.speaker_role == "unknown" for item in predictions),
         segments=weighted_predictions,
     )
+
+
+def build_turn_signals(
+    assessments: Sequence[RelevanceAssessment],
+    predictions: Sequence[SegmentPrediction],
+    *,
+    neutral_margin: float = 0.12,
+) -> list[TurnSignal]:
+    """Summarize every policy-maker turn, including neutral/irrelevant answers."""
+    grouped: dict[str, list[tuple[RelevanceAssessment, SegmentPrediction | None]]] = {}
+    prediction_iterator = iter(predictions)
+
+    for index, assessment in enumerate(assessments, start=1):
+        prediction = None
+        if assessment.label == "directional":
+            try:
+                prediction = next(prediction_iterator)
+            except StopIteration as exc:
+                raise ValueError("Missing prediction for a directional segment") from exc
+        turn_id = assessment.segment.turn_id or f"answer_{index:04d}"
+        grouped.setdefault(turn_id, []).append((assessment, prediction))
+
+    try:
+        next(prediction_iterator)
+    except StopIteration:
+        pass
+    else:
+        raise ValueError("Received more predictions than directional segments")
+
+    turns: list[TurnSignal] = []
+    for turn_id, entries in grouped.items():
+        segments = [assessment.segment for assessment, _ in entries]
+        directional_predictions = [
+            prediction for _, prediction in entries if prediction is not None
+        ]
+        if directional_predictions:
+            bullish, bearish, _ = _aggregate_prediction_probabilities(
+                directional_predictions,
+                recency_half_life_seconds=None,
+            )
+        else:
+            bullish = bearish = 0.5
+
+        candidate_words = sum(len(segment.text.split()) for segment in segments)
+        directional_words = sum(
+            len(assessment.segment.text.split())
+            for assessment, _ in entries
+            if assessment.label == "directional"
+        )
+        signal_strength = abs(bullish - bearish)
+        turns.append(
+            TurnSignal(
+                turn_id=turn_id,
+                question_turn_id=next(
+                    (
+                        segment.question_turn_id
+                        for segment in segments
+                        if segment.question_turn_id is not None
+                    ),
+                    None,
+                ),
+                start=min(segment.start for segment in segments),
+                end=max(segment.end for segment in segments),
+                text=" ".join(segment.text for segment in segments),
+                question_context=next(
+                    (
+                        segment.question_context
+                        for segment in segments
+                        if segment.question_context is not None
+                    ),
+                    None,
+                ),
+                speaker_id=segments[0].speaker_id,
+                role_confidence=min(segment.role_confidence for segment in segments),
+                label="bullish" if bullish >= bearish else "bearish",
+                confidence=max(bullish, bearish),
+                bullish_probability=bullish,
+                bearish_probability=bearish,
+                signal_strength=signal_strength,
+                low_signal=signal_strength < neutral_margin,
+                directional_coverage=(
+                    directional_words / candidate_words if candidate_words else 0.0
+                ),
+                segment_count=len(entries),
+                directional_segment_count=sum(
+                    assessment.label == "directional" for assessment, _ in entries
+                ),
+                neutral_segment_count=sum(
+                    assessment.label == "neutral" for assessment, _ in entries
+                ),
+                irrelevant_segment_count=sum(
+                    assessment.label == "irrelevant" for assessment, _ in entries
+                ),
+            )
+        )
+    return turns
 
 
 class VideoAnalysisPipeline:
@@ -211,6 +322,11 @@ class VideoAnalysisPipeline:
         )
 
         if not directional_segments:
+            turns = build_turn_signals(
+                assessments,
+                [],
+                neutral_margin=self.neutral_margin,
+            )
             return AnalysisResult(
                 label="bullish",
                 confidence=0.5,
@@ -225,6 +341,7 @@ class VideoAnalysisPipeline:
                 model=model_name,
                 directional_coverage=0.0,
                 excluded_segment_count=excluded_count,
+                turns=turns,
                 **audit_counts,
                 segments=[],
             )
@@ -238,6 +355,11 @@ class VideoAnalysisPipeline:
             )
             for prediction, assessment in zip(raw_predictions, directional, strict=True)
         ]
+        turns = build_turn_signals(
+            assessments,
+            predictions,
+            neutral_margin=self.neutral_margin,
+        )
         result = aggregate_predictions(
             predictions,
             asset_context=asset_context,
@@ -252,5 +374,6 @@ class VideoAnalysisPipeline:
             result,
             directional_coverage=coverage,
             excluded_segment_count=excluded_count,
+            turns=turns,
             **audit_counts,
         )

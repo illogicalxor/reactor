@@ -28,6 +28,11 @@ class PressConferenceRoleAssignerTests(unittest.TestCase):
         self.assertEqual(result[2].speaker_role, "policy_maker")
         self.assertEqual(result[2].question_context, segments[1].text)
         self.assertEqual(result[2].role_source, "text")
+        self.assertEqual(
+            [segment.turn_id for segment in result],
+            ["answer_0001", "question_0001", "answer_0002"],
+        )
+        self.assertEqual(result[2].question_turn_id, result[1].turn_id)
 
 
 @dataclass(frozen=True)
@@ -64,6 +69,7 @@ class PyannoteRoleAssignerTests(unittest.TestCase):
         self.assertEqual(result[1].speaker_role, "journalist")
         self.assertEqual(result[2].speaker_role, "policy_maker")
         self.assertEqual(result[2].question_context, "Will you raise rates?")
+        self.assertEqual(result[2].question_turn_id, result[1].turn_id)
         self.assertEqual(result[2].role_source, "audio")
 
     def test_splits_asr_segment_when_speaker_changes_between_words(self) -> None:
@@ -95,6 +101,10 @@ class PyannoteRoleAssignerTests(unittest.TestCase):
         self.assertEqual(
             [segment.speaker_role for segment in result],
             ["policy_maker", "policy_maker", "journalist", "policy_maker"],
+        )
+        self.assertEqual(
+            [segment.turn_id for segment in result],
+            ["answer_0001", "answer_0001", "question_0001", "answer_0002"],
         )
         self.assertEqual(result[-1].question_context, "Will rates rise?")
 

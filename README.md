@@ -3,7 +3,7 @@
 An English-only NLP service for US markets. It receives video or audio of a US
 policy maker, transcribes the speech, and returns a `bullish` or `bearish` language
 signal for a specified US asset. The response includes probabilities, signal
-strength, the transcript, and segment-level classifications.
+strength, the transcript, answer-level signals, and segment-level classifications.
 
 `asset_context` is required conceptually because a statement can affect US equities,
 Treasuries, and the US dollar differently. The default is `US equities`.
@@ -14,7 +14,7 @@ Treasuries, and the US dollar differently. The default is `US equities`.
 video/audio -> FFmpeg (16 kHz WAV) -> Whisper word timestamps -> speaker roles
             -> question/answer turns -> relevance gate -> ~30-second answers
             -> NLP classifier -> content-weighted recording aggregation
-            -> bullish/bearish + confidence + low_signal
+            -> answer series + bullish/bearish event aggregate + low_signal
 ```
 
 Complete uploaded recordings use content weighting without temporal decay, so an
@@ -124,6 +124,17 @@ Abbreviated response:
   "unknown_speaker_segment_count": 0,
   "neutral_segment_count": 2,
   "irrelevant_segment_count": 2,
+  "turns": [
+    {
+      "turn_id": "answer_0002",
+      "question_turn_id": "question_0001",
+      "label": "bearish",
+      "bullish_probability": 0.18,
+      "bearish_probability": 0.82,
+      "low_signal": false,
+      "directional_coverage": 0.73
+    }
+  ],
   "segments": []
 }
 ```
@@ -131,8 +142,12 @@ Abbreviated response:
 `low_signal=true` means the API still returns one of the two contract labels, but
 the probability difference is below the configured margin. Downstream consumers
 should abstain from acting on those responses. Segment evidence includes
-`speaker_id`, `speaker_role`, `role_confidence`, `role_source`, `question_context`,
-`relevance_label`, and `relevance_confidence`.
+`speaker_id`, `speaker_role`, `role_confidence`, `role_source`, `turn_id`,
+`question_turn_id`, `question_context`, `relevance_label`, and
+`relevance_confidence`. The `turns` series summarizes every policy-maker statement
+or answer within that analysis result. Neutral or irrelevant turns remain visible as
+50/50, `low_signal=true` entries, while only directional evidence contributes to the
+event aggregate.
 
 ## Real-time streaming
 
