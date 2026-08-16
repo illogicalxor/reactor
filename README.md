@@ -93,6 +93,11 @@ POLICY_SIGNAL_WHISPER_DEVICE=cuda
 POLICY_SIGNAL_WHISPER_COMPUTE_TYPE=float16
 ```
 
+The repository's offline bundle includes `models/whisper-small.en`. Its
+`download_manifest.json` records the size and SHA-256 of every CTranslate2 file;
+`model.bin` is stored through Git LFS. Running `policy-signal-fetch-whisper` again
+refreshes both the checkpoint and this integrity manifest.
+
 ### Analyze a file
 
 ```bash

@@ -24,31 +24,60 @@ from .relevance import (
 from .transcription import FasterWhisperTranscriber
 
 
+def _require_model_bundle(
+    directory: Path,
+    component: str,
+    *,
+    required: tuple[str, ...],
+    alternatives: tuple[tuple[str, ...], ...] = (),
+) -> None:
+    if not directory.is_dir():
+        raise ValueError(f"Local {component} directory does not exist: {directory}")
+    missing = [name for name in required if not (directory / name).is_file()]
+    for group in alternatives:
+        if not any((directory / name).is_file() for name in group):
+            missing.append(" or ".join(group))
+    if missing:
+        raise ValueError(
+            f"Local {component} directory is incomplete ({', '.join(missing)}): {directory}"
+        )
+
+
 def build_pipeline(settings: Settings) -> VideoAnalysisPipeline:
     if settings.local_models_only:
         os.environ["HF_HUB_OFFLINE"] = "1"
-        if not Path(settings.whisper_model).is_dir():
-            raise ValueError(f"Local Whisper directory does not exist: {settings.whisper_model}")
-        if (
-            settings.classifier_backend != "heuristic"
-            and not Path(settings.classifier_model).is_dir()
-        ):
-            raise ValueError(
-                f"Local classifier directory does not exist: {settings.classifier_model}"
+        os.environ["TRANSFORMERS_OFFLINE"] = "1"
+        os.environ["HF_DATASETS_OFFLINE"] = "1"
+        _require_model_bundle(
+            Path(settings.whisper_model),
+            "Whisper",
+            required=("config.json", "model.bin", "tokenizer.json"),
+        )
+        if settings.classifier_backend != "heuristic":
+            _require_model_bundle(
+                Path(settings.classifier_model),
+                "classifier",
+                required=("config.json",),
+                alternatives=(
+                    ("model.safetensors", "pytorch_model.bin"),
+                    ("tokenizer.json", "vocab.json"),
+                ),
             )
-        if (
-            settings.speaker_role_backend == "pyannote"
-            and not Path(settings.speaker_diarization_model).is_dir()
-        ):
-            raise ValueError(
-                f"Local diarization directory does not exist: {settings.speaker_diarization_model}"
+        if settings.speaker_role_backend == "pyannote":
+            _require_model_bundle(
+                Path(settings.speaker_diarization_model),
+                "diarization",
+                required=("config.yaml",),
             )
-        if (
-            settings.relevance_backend == "fine-tuned"
-            and not Path(settings.relevance_model).is_dir()
-        ):
-            raise ValueError(
-                f"Local relevance model directory does not exist: {settings.relevance_model}"
+        if settings.relevance_backend == "fine-tuned":
+            _require_model_bundle(
+                Path(settings.relevance_model),
+                "relevance model",
+                required=("config.json",),
+                alternatives=(
+                    ("model.safetensors", "pytorch_model.bin"),
+                    ("tokenizer.json", "vocab.json"),
+                ),
             )
 
     if settings.classifier_backend == "zero-shot":
