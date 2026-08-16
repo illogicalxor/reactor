@@ -42,6 +42,7 @@ policy-signal-prepare-relevance = "policy_signal.prepare_relevance_data:main"
 policy-signal-train-relevance = "policy_signal.train_relevance:main"
 policy-signal-fetch-whisper = "policy_signal.fetch_whisper:main"
 policy-signal-evaluate-diarization = "policy_signal.evaluate_diarization:main"
+policy-signal-evaluate-relevance = "policy_signal.evaluate_relevance:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/policy_signal"]

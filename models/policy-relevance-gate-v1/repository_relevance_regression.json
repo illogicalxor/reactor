@@ -1,0 +1,662 @@
+{
+  "dataset": "data/relevance_regression.example.csv",
+  "metrics": {
+    "accuracy": 0.886364,
+    "balanced_accuracy": 0.791667,
+    "confusion_matrix": [
+      [
+        28,
+        0,
+        0
+      ],
+      [
+        0,
+        5,
+        3
+      ],
+      [
+        0,
+        2,
+        6
+      ]
+    ],
+    "examples": 44,
+    "expected_calibration_error_10_bins": 0.112258,
+    "f1_macro": 0.79085,
+    "labels": [
+      "irrelevant",
+      "neutral",
+      "directional"
+    ],
+    "log_loss": 0.340673,
+    "multiclass_brier_score": 0.177426,
+    "per_class": {
+      "directional": {
+        "f1": 0.705882,
+        "precision": 0.666667,
+        "recall": 0.75,
+        "support": 8
+      },
+      "irrelevant": {
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 28
+      },
+      "neutral": {
+        "f1": 0.666667,
+        "precision": 0.714286,
+        "recall": 0.625,
+        "support": 8
+      }
+    },
+    "per_event": {
+      "directional_policy": {
+        "accuracy": 0.75,
+        "examples": 8
+      },
+      "neutral_economy": {
+        "accuracy": 0.625,
+        "examples": 8
+      },
+      "procedural_acknowledgement": {
+        "accuracy": 1.0,
+        "examples": 3
+      },
+      "procedural_closing": {
+        "accuracy": 1.0,
+        "examples": 7
+      },
+      "procedural_housekeeping": {
+        "accuracy": 1.0,
+        "examples": 6
+      },
+      "procedural_opening": {
+        "accuracy": 1.0,
+        "examples": 4
+      },
+      "procedural_question_management": {
+        "accuracy": 1.0,
+        "examples": 8
+      }
+    },
+    "predictions": [
+      {
+        "confidence": 0.840936,
+        "event_id": "procedural_opening",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.020072,
+          "irrelevant": 0.840936,
+          "neutral": 0.138992
+        },
+        "source": "repository-authored",
+        "text": "Good afternoon everyone."
+      },
+      {
+        "confidence": 0.711858,
+        "event_id": "procedural_opening",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.030301,
+          "irrelevant": 0.711858,
+          "neutral": 0.257842
+        },
+        "source": "repository-authored",
+        "text": "Good morning and welcome."
+      },
+      {
+        "confidence": 0.83972,
+        "event_id": "procedural_opening",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.012512,
+          "irrelevant": 0.83972,
+          "neutral": 0.147767
+        },
+        "source": "repository-authored",
+        "text": "Thank you for joining us today."
+      },
+      {
+        "confidence": 0.926069,
+        "event_id": "procedural_opening",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.0263,
+          "irrelevant": 0.926069,
+          "neutral": 0.047631
+        },
+        "source": "repository-authored",
+        "text": "I will begin with a few brief opening remarks."
+      },
+      {
+        "confidence": 0.984633,
+        "event_id": "procedural_housekeeping",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.007276,
+          "irrelevant": 0.984633,
+          "neutral": 0.008091
+        },
+        "source": "repository-authored",
+        "text": "The statement has been posted on our website."
+      },
+      {
+        "confidence": 0.986833,
+        "event_id": "procedural_housekeeping",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.004952,
+          "irrelevant": 0.986833,
+          "neutral": 0.008215
+        },
+        "source": "repository-authored",
+        "text": "Copies of the statement are available outside the room."
+      },
+      {
+        "confidence": 0.98,
+        "event_id": "procedural_housekeeping",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.005433,
+          "irrelevant": 0.98,
+          "neutral": 0.014567
+        },
+        "source": "repository-authored",
+        "text": "Please silence your phones before we begin."
+      },
+      {
+        "confidence": 0.98,
+        "event_id": "procedural_housekeeping",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.001498,
+          "irrelevant": 0.98,
+          "neutral": 0.018502
+        },
+        "source": "repository-authored",
+        "text": "Can everyone hear me clearly?"
+      },
+      {
+        "confidence": 0.98,
+        "event_id": "procedural_housekeeping",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.006617,
+          "irrelevant": 0.98,
+          "neutral": 0.013383
+        },
+        "source": "repository-authored",
+        "text": "Please speak directly into the microphone."
+      },
+      {
+        "confidence": 0.759851,
+        "event_id": "procedural_housekeeping",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.089338,
+          "irrelevant": 0.759851,
+          "neutral": 0.150811
+        },
+        "source": "repository-authored",
+        "text": "We are experiencing a brief technical difficulty."
+      },
+      {
+        "confidence": 0.98,
+        "event_id": "procedural_question_management",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.001756,
+          "irrelevant": 0.98,
+          "neutral": 0.018244
+        },
+        "source": "repository-authored",
+        "text": "Could you repeat the question please?"
+      },
+      {
+        "confidence": 0.98,
+        "event_id": "procedural_question_management",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.000369,
+          "irrelevant": 0.98,
+          "neutral": 0.019631
+        },
+        "source": "repository-authored",
+        "text": "Let us go to the next question."
+      },
+      {
+        "confidence": 0.98,
+        "event_id": "procedural_question_management",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.000431,
+          "irrelevant": 0.98,
+          "neutral": 0.019569
+        },
+        "source": "repository-authored",
+        "text": "We will take a question from Reuters."
+      },
+      {
+        "confidence": 0.98,
+        "event_id": "procedural_question_management",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.002287,
+          "irrelevant": 0.98,
+          "neutral": 0.017713
+        },
+        "source": "repository-authored",
+        "text": "There is time for one final question."
+      },
+      {
+        "confidence": 0.945753,
+        "event_id": "procedural_question_management",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.00843,
+          "irrelevant": 0.945753,
+          "neutral": 0.045817
+        },
+        "source": "repository-authored",
+        "text": "I will now turn to the reporters in the room."
+      },
+      {
+        "confidence": 0.98,
+        "event_id": "procedural_question_management",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.002802,
+          "irrelevant": 0.98,
+          "neutral": 0.017198
+        },
+        "source": "repository-authored",
+        "text": "Please identify yourself and your organization."
+      },
+      {
+        "confidence": 0.939852,
+        "event_id": "procedural_question_management",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.010935,
+          "irrelevant": 0.939852,
+          "neutral": 0.049213
+        },
+        "source": "repository-authored",
+        "text": "We will start on the left side of the room."
+      },
+      {
+        "confidence": 0.953126,
+        "event_id": "procedural_question_management",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.005916,
+          "irrelevant": 0.953126,
+          "neutral": 0.040958
+        },
+        "source": "repository-authored",
+        "text": "The gentleman in the second row is next."
+      },
+      {
+        "confidence": 0.756741,
+        "event_id": "procedural_acknowledgement",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.010829,
+          "irrelevant": 0.756741,
+          "neutral": 0.23243
+        },
+        "source": "repository-authored",
+        "text": "Thank you for that question."
+      },
+      {
+        "confidence": 0.941626,
+        "event_id": "procedural_acknowledgement",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.015611,
+          "irrelevant": 0.941626,
+          "neutral": 0.042763
+        },
+        "source": "repository-authored",
+        "text": "I appreciate everyone being here."
+      },
+      {
+        "confidence": 0.889791,
+        "event_id": "procedural_acknowledgement",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.011321,
+          "irrelevant": 0.889791,
+          "neutral": 0.098888
+        },
+        "source": "repository-authored",
+        "text": "Thank you all for your patience."
+      },
+      {
+        "confidence": 0.964858,
+        "event_id": "procedural_closing",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.00517,
+          "irrelevant": 0.964858,
+          "neutral": 0.029972
+        },
+        "source": "repository-authored",
+        "text": "I have no additional announcements today."
+      },
+      {
+        "confidence": 0.7827,
+        "event_id": "procedural_closing",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.008243,
+          "irrelevant": 0.7827,
+          "neutral": 0.209057
+        },
+        "source": "repository-authored",
+        "text": "There is no news to make at this time."
+      },
+      {
+        "confidence": 0.98,
+        "event_id": "procedural_closing",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.007236,
+          "irrelevant": 0.98,
+          "neutral": 0.012764
+        },
+        "source": "repository-authored",
+        "text": "That concludes our press conference."
+      },
+      {
+        "confidence": 0.745902,
+        "event_id": "procedural_closing",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.012107,
+          "irrelevant": 0.745902,
+          "neutral": 0.241991
+        },
+        "source": "repository-authored",
+        "text": "Thank you and have a good afternoon."
+      },
+      {
+        "confidence": 0.984993,
+        "event_id": "procedural_closing",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.006135,
+          "irrelevant": 0.984993,
+          "neutral": 0.008872
+        },
+        "source": "repository-authored",
+        "text": "We will see you at the next scheduled meeting."
+      },
+      {
+        "confidence": 0.979452,
+        "event_id": "procedural_closing",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.008016,
+          "irrelevant": 0.979452,
+          "neutral": 0.012531
+        },
+        "source": "repository-authored",
+        "text": "The press conference will end in a few moments."
+      },
+      {
+        "confidence": 0.98,
+        "event_id": "procedural_closing",
+        "label": "irrelevant",
+        "predicted": "irrelevant",
+        "probabilities": {
+          "directional": 0.006617,
+          "irrelevant": 0.98,
+          "neutral": 0.013383
+        },
+        "source": "repository-authored",
+        "text": "The transcript will be published later today."
+      },
+      {
+        "confidence": 0.560424,
+        "event_id": "neutral_economy",
+        "label": "neutral",
+        "predicted": "directional",
+        "probabilities": {
+          "directional": 0.560424,
+          "irrelevant": 0.000945,
+          "neutral": 0.438631
+        },
+        "source": "repository-authored",
+        "text": "Recent indicators suggest that economic activity has expanded at a moderate pace."
+      },
+      {
+        "confidence": 0.952828,
+        "event_id": "neutral_economy",
+        "label": "neutral",
+        "predicted": "neutral",
+        "probabilities": {
+          "directional": 0.046215,
+          "irrelevant": 0.000957,
+          "neutral": 0.952828
+        },
+        "source": "repository-authored",
+        "text": "The labor market remains broadly stable."
+      },
+      {
+        "confidence": 0.973551,
+        "event_id": "neutral_economy",
+        "label": "neutral",
+        "predicted": "directional",
+        "probabilities": {
+          "directional": 0.973551,
+          "irrelevant": 0.00107,
+          "neutral": 0.025379
+        },
+        "source": "repository-authored",
+        "text": "Consumer spending has continued to grow."
+      },
+      {
+        "confidence": 0.991901,
+        "event_id": "neutral_economy",
+        "label": "neutral",
+        "predicted": "neutral",
+        "probabilities": {
+          "directional": 0.005515,
+          "irrelevant": 0.002584,
+          "neutral": 0.991901
+        },
+        "source": "repository-authored",
+        "text": "Business investment has been uneven across sectors."
+      },
+      {
+        "confidence": 0.985315,
+        "event_id": "neutral_economy",
+        "label": "neutral",
+        "predicted": "neutral",
+        "probabilities": {
+          "directional": 0.00332,
+          "irrelevant": 0.011365,
+          "neutral": 0.985315
+        },
+        "source": "repository-authored",
+        "text": "The latest data have been mixed."
+      },
+      {
+        "confidence": 0.991665,
+        "event_id": "neutral_economy",
+        "label": "neutral",
+        "predicted": "neutral",
+        "probabilities": {
+          "directional": 0.005628,
+          "irrelevant": 0.002707,
+          "neutral": 0.991665
+        },
+        "source": "repository-authored",
+        "text": "Productivity growth remains uncertain."
+      },
+      {
+        "confidence": 0.974934,
+        "event_id": "neutral_economy",
+        "label": "neutral",
+        "predicted": "directional",
+        "probabilities": {
+          "directional": 0.974934,
+          "irrelevant": 0.001675,
+          "neutral": 0.02339
+        },
+        "source": "repository-authored",
+        "text": "Energy prices moved higher during the month."
+      },
+      {
+        "confidence": 0.987515,
+        "event_id": "neutral_economy",
+        "label": "neutral",
+        "predicted": "neutral",
+        "probabilities": {
+          "directional": 0.004269,
+          "irrelevant": 0.008215,
+          "neutral": 0.987515
+        },
+        "source": "repository-authored",
+        "text": "Survey measures differ across regions."
+      },
+      {
+        "confidence": 0.975185,
+        "event_id": "directional_policy",
+        "label": "directional",
+        "predicted": "directional",
+        "probabilities": {
+          "directional": 0.975185,
+          "irrelevant": 0.001357,
+          "neutral": 0.023457
+        },
+        "source": "repository-authored",
+        "text": "We are prepared to reduce interest rates if inflation continues to decline."
+      },
+      {
+        "confidence": 0.981923,
+        "event_id": "directional_policy",
+        "label": "directional",
+        "predicted": "directional",
+        "probabilities": {
+          "directional": 0.981923,
+          "irrelevant": 0.001978,
+          "neutral": 0.016099
+        },
+        "source": "repository-authored",
+        "text": "Further rate increases may be necessary if price pressures persist."
+      },
+      {
+        "confidence": 0.962152,
+        "event_id": "directional_policy",
+        "label": "directional",
+        "predicted": "directional",
+        "probabilities": {
+          "directional": 0.962152,
+          "irrelevant": 0.000894,
+          "neutral": 0.036954
+        },
+        "source": "repository-authored",
+        "text": "Rates will need to remain higher for longer."
+      },
+      {
+        "confidence": 0.669395,
+        "event_id": "directional_policy",
+        "label": "directional",
+        "predicted": "neutral",
+        "probabilities": {
+          "directional": 0.328181,
+          "irrelevant": 0.002424,
+          "neutral": 0.669395
+        },
+        "source": "repository-authored",
+        "text": "A slower pace of balance sheet runoff may soon be appropriate."
+      },
+      {
+        "confidence": 0.973683,
+        "event_id": "directional_policy",
+        "label": "directional",
+        "predicted": "directional",
+        "probabilities": {
+          "directional": 0.973683,
+          "irrelevant": 0.001614,
+          "neutral": 0.024703
+        },
+        "source": "repository-authored",
+        "text": "Additional policy firming would help restore price stability."
+      },
+      {
+        "confidence": 0.922831,
+        "event_id": "directional_policy",
+        "label": "directional",
+        "predicted": "neutral",
+        "probabilities": {
+          "directional": 0.056368,
+          "irrelevant": 0.020801,
+          "neutral": 0.922831
+        },
+        "source": "repository-authored",
+        "text": "We can begin removing policy restraint at an upcoming meeting."
+      },
+      {
+        "confidence": 0.976468,
+        "event_id": "directional_policy",
+        "label": "directional",
+        "predicted": "directional",
+        "probabilities": {
+          "directional": 0.976468,
+          "irrelevant": 0.003488,
+          "neutral": 0.020044
+        },
+        "source": "repository-authored",
+        "text": "Financial conditions may need to tighten further."
+      },
+      {
+        "confidence": 0.979874,
+        "event_id": "directional_policy",
+        "label": "directional",
+        "predicted": "directional",
+        "probabilities": {
+          "directional": 0.979874,
+          "irrelevant": 0.004014,
+          "neutral": 0.016112
+        },
+        "source": "repository-authored",
+        "text": "The committee is considering an earlier reduction in the federal funds rate."
+      }
+    ]
+  },
+  "model": "models/policy-relevance-gate-v1",
+  "procedural_override": true,
+  "procedural_override_confidence": 0.98,
+  "temperature": 1.0
+}

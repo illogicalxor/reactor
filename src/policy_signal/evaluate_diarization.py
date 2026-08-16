@@ -6,7 +6,7 @@ import json
 import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from .attribution import PyannoteRoleAssigner, SpeakerAttributionError
 
@@ -42,7 +42,7 @@ def load_timeline_csv(path: Path) -> list[TimelineSegment]:
                 TimelineSegment(
                     start=start,
                     end=end,
-                    speaker_role=role,  # type: ignore[arg-type]
+                    speaker_role=cast(TimelineRole, role),
                     speaker_id=(row.get("speaker_id") or "").strip() or None,
                 )
             )

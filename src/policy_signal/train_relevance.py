@@ -6,6 +6,7 @@ import shutil
 from collections import Counter
 from pathlib import Path
 
+from .calibration import fit_temperature, softmax_with_temperature
 from .train import file_sha256
 
 LABEL_TO_ID = {"irrelevant": 0, "neutral": 1, "directional": 2}
@@ -160,6 +161,25 @@ def main() -> None:
     validation_evaluation = {
         key: round(float(value), 6) for key, value in trainer.evaluate().items()
     }
+    validation_prediction = trainer.predict(tokenized["validation"])
+    validation_logits = validation_prediction.predictions.tolist()
+    validation_targets = validation_prediction.label_ids.tolist()
+    temperature, validation_nll_before, validation_nll_after = fit_temperature(
+        validation_logits,
+        validation_targets,
+    )
+    calibration = {
+        "method": "temperature_scaling",
+        "temperature": round(float(temperature), 8),
+        "validation_examples": len(validation_targets),
+        "validation_nll_before": round(float(validation_nll_before), 6),
+        "validation_nll_after": round(float(validation_nll_after), 6),
+        "validation_sha256": file_sha256(args.validation),
+    }
+    (output / "relevance_calibration.json").write_text(
+        json.dumps(calibration, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
     manifest = {
         "task": "policy relevance gate",
@@ -197,6 +217,7 @@ def main() -> None:
         "validation": {
             key: value for key, value in validation_evaluation.items() if key != "epoch"
         },
+        "calibration": calibration,
     }
     (output / "training_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
@@ -207,7 +228,16 @@ def main() -> None:
 
     if "test" in tokenized:
         prediction = trainer.predict(tokenized["test"])
-        probabilities = torch.softmax(torch.from_numpy(prediction.predictions), dim=-1).numpy()
+        raw_probabilities = torch.softmax(
+            torch.from_numpy(prediction.predictions),
+            dim=-1,
+        ).numpy()
+        probabilities = np.asarray(
+            [
+                softmax_with_temperature(row, temperature)
+                for row in prediction.predictions.tolist()
+            ]
+        )
         predicted = np.argmax(probabilities, axis=-1)
         target_names = list(LABEL_TO_ID)
         test_evaluation = {
@@ -220,6 +250,11 @@ def main() -> None:
             "log_loss": round(
                 float(log_loss(prediction.label_ids, probabilities, labels=[0, 1, 2])), 6
             ),
+            "raw_log_loss": round(
+                float(log_loss(prediction.label_ids, raw_probabilities, labels=[0, 1, 2])),
+                6,
+            ),
+            "temperature": round(float(temperature), 8),
             "confusion_matrix": confusion_matrix(
                 prediction.label_ids,
                 predicted,

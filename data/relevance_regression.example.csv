@@ -1,0 +1,45 @@
+text,label,event_id,source
+Good afternoon everyone.,irrelevant,procedural_opening,repository-authored
+Good morning and welcome.,irrelevant,procedural_opening,repository-authored
+Thank you for joining us today.,irrelevant,procedural_opening,repository-authored
+I will begin with a few brief opening remarks.,irrelevant,procedural_opening,repository-authored
+The statement has been posted on our website.,irrelevant,procedural_housekeeping,repository-authored
+Copies of the statement are available outside the room.,irrelevant,procedural_housekeeping,repository-authored
+Please silence your phones before we begin.,irrelevant,procedural_housekeeping,repository-authored
+Can everyone hear me clearly?,irrelevant,procedural_housekeeping,repository-authored
+Please speak directly into the microphone.,irrelevant,procedural_housekeeping,repository-authored
+We are experiencing a brief technical difficulty.,irrelevant,procedural_housekeeping,repository-authored
+Could you repeat the question please?,irrelevant,procedural_question_management,repository-authored
+Let us go to the next question.,irrelevant,procedural_question_management,repository-authored
+We will take a question from Reuters.,irrelevant,procedural_question_management,repository-authored
+There is time for one final question.,irrelevant,procedural_question_management,repository-authored
+I will now turn to the reporters in the room.,irrelevant,procedural_question_management,repository-authored
+Please identify yourself and your organization.,irrelevant,procedural_question_management,repository-authored
+We will start on the left side of the room.,irrelevant,procedural_question_management,repository-authored
+The gentleman in the second row is next.,irrelevant,procedural_question_management,repository-authored
+Thank you for that question.,irrelevant,procedural_acknowledgement,repository-authored
+I appreciate everyone being here.,irrelevant,procedural_acknowledgement,repository-authored
+Thank you all for your patience.,irrelevant,procedural_acknowledgement,repository-authored
+I have no additional announcements today.,irrelevant,procedural_closing,repository-authored
+There is no news to make at this time.,irrelevant,procedural_closing,repository-authored
+That concludes our press conference.,irrelevant,procedural_closing,repository-authored
+Thank you and have a good afternoon.,irrelevant,procedural_closing,repository-authored
+We will see you at the next scheduled meeting.,irrelevant,procedural_closing,repository-authored
+The press conference will end in a few moments.,irrelevant,procedural_closing,repository-authored
+The transcript will be published later today.,irrelevant,procedural_closing,repository-authored
+Recent indicators suggest that economic activity has expanded at a moderate pace.,neutral,neutral_economy,repository-authored
+The labor market remains broadly stable.,neutral,neutral_economy,repository-authored
+Consumer spending has continued to grow.,neutral,neutral_economy,repository-authored
+Business investment has been uneven across sectors.,neutral,neutral_economy,repository-authored
+The latest data have been mixed.,neutral,neutral_economy,repository-authored
+Productivity growth remains uncertain.,neutral,neutral_economy,repository-authored
+Energy prices moved higher during the month.,neutral,neutral_economy,repository-authored
+Survey measures differ across regions.,neutral,neutral_economy,repository-authored
+We are prepared to reduce interest rates if inflation continues to decline.,directional,directional_policy,repository-authored
+Further rate increases may be necessary if price pressures persist.,directional,directional_policy,repository-authored
+Rates will need to remain higher for longer.,directional,directional_policy,repository-authored
+A slower pace of balance sheet runoff may soon be appropriate.,directional,directional_policy,repository-authored
+Additional policy firming would help restore price stability.,directional,directional_policy,repository-authored
+We can begin removing policy restraint at an upcoming meeting.,directional,directional_policy,repository-authored
+Financial conditions may need to tighten further.,directional,directional_policy,repository-authored
+The committee is considering an earlier reduction in the federal funds rate.,directional,directional_policy,repository-authored

@@ -88,7 +88,9 @@ Implementado neste ciclo:
 - testes garantem que segmentos não sejam unidos através de uma troca de locutor.
 
 Pendente: voiceprint/rosto cadastrado para confirmar que o cluster ancorado é mesmo
-o Chair, avaliação de DER no vídeo real e estado de locutor persistente no streaming.
+o Chair e avaliação de DER no vídeo real. O estado textual de pergunta, resposta e
+papel já persiste por conexão WebSocket; clusters acústicos ainda são locais a cada
+janela do pyannote.
 
 ### Caminho de áudio
 
@@ -151,9 +153,17 @@ No teste de 2023–2024, o F1 macro foi 0,6734, contra 0,3692 do heurístico nos
 59 exemplos. O gate neural está integrado pelo backend `fine-tuned`; o heurístico
 permanece disponível para rollback e instalações sem os pesos locais.
 
-Pendente: ampliar principalmente a classe `irrelevant` (apenas dois exemplos no
-teste atual), calibrar probabilidades em um conjunto maior por evento e validar a
-separação de papéis junto com diarização real.
+O conjunto de regressão local agora cobre 28 falas `irrelevant`, oito `neutral` e
+oito `directional`. Nele, o checkpoint mais o guardrail processual obteve F1 macro
+0,7909 e recall 1,0 de `irrelevant`; o resultado bruto e o pós-processado foram
+versionados separadamente. O próximo treino aceita exemplos humanos suplementares
+somente no split de treino e grava calibração por temperature scaling usando a
+validação. O checkpoint v1 atual é anterior a esse calibrador e usa temperatura 1,0.
+
+Pendente: repetir o treino na máquina com GPU usando exemplos humanos de múltiplos
+eventos, medir calibração fora da amostra e validar a separação de papéis junto com
+diarização real. O conjunto local é sintético e serve como regressão, não como
+benchmark independente de produção.
 
 O gate interno usa os rótulos originalmente disponíveis:
 

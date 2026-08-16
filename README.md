@@ -76,6 +76,28 @@ POLICY_SIGNAL_RELEVANCE_MODEL=models/policy-relevance-gate-v1
 
 Set `POLICY_SIGNAL_RELEVANCE_BACKEND=none` only for controlled ablations.
 
+The fine-tuned backend also applies a narrowly anchored procedural guardrail for
+complete housekeeping turns such as moving to the next question. It does not match
+substantive answers that merely mention a question. Evaluate the checkpoint and the
+full inference policy separately with the repository-authored regression set:
+
+```bash
+policy-signal-evaluate-relevance \
+  --data data/relevance_regression.example.csv \
+  --model models/policy-relevance-gate-v1 \
+  --no-procedural-override \
+  --output artifacts/relevance-raw.json
+
+policy-signal-evaluate-relevance \
+  --data data/relevance_regression.example.csv \
+  --model models/policy-relevance-gate-v1 \
+  --output artifacts/relevance-inference.json
+```
+
+This small synthetic set is a deterministic regression suite, not an independent
+production benchmark. See `RELEVANCE_VALIDATION.md` for the measured results and
+limitations.
+
 Three classifier backends are available:
 
 - `zero-shot` (default): English NLI checkpoint for cold-start use;
@@ -243,6 +265,23 @@ split hashes, selected checkpoint, and metrics in the output directory. The curr
 checkpoint reached test macro F1 `0.6734`, versus `0.3692` for the heuristic on the
 same 59 examples. This test has only two `irrelevant` examples, so the per-class
 result is not a stable production estimate.
+
+For the next training run, add human-reviewed examples without contaminating the
+chronological validation and test splits:
+
+```bash
+policy-signal-prepare-relevance \
+  --output data \
+  --supplemental-train data/human_reviewed_procedural_train.csv
+```
+
+Supplemental CSVs require `text,label`; `year,source` are optional. Exact overlaps
+with held-out data are removed and every supplemental input hash is recorded. Do
+not pass `data/relevance_regression.example.csv` here: it is reserved for regression
+measurement. A newly trained checkpoint now includes
+`relevance_calibration.json`, fitted by temperature scaling on validation logits.
+The current `v1` predates this change and therefore runs at temperature `1.0` until
+it is retrained on the GPU machine.
 
 ### Offline training, inference-only production
 
