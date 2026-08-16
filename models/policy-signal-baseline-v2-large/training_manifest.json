@@ -1,0 +1,28 @@
+{
+  "asset_scope": "US markets",
+  "base_model": "models/policy-signal-baseline-v1",
+  "data_sha256": {
+    "train": "2ffe7d51bb074dc4df82408521b33811675b2b457b6477d524616ef05d30d032",
+    "validation": "9083c6d762268c96ba1a6e14ed724cc5ae6b05d08513f9d6fdd36f263f3be4b7"
+  },
+  "evaluation": {
+    "epoch": 3.0,
+    "eval_accuracy": 0.885714,
+    "eval_f1_macro": 0.853896,
+    "eval_loss": 0.315043,
+    "eval_runtime": 0.3171,
+    "eval_samples_per_second": 331.124,
+    "eval_steps_per_second": 44.15
+  },
+  "labels": {
+    "bearish": 0,
+    "bullish": 1
+  },
+  "language": "en",
+  "training_parameters": {
+    "batch_size": 8,
+    "epochs": 3.0,
+    "learning_rate": 1e-05,
+    "seed": 42
+  }
+}

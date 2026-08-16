@@ -1,0 +1,60 @@
+{
+  "counts": {
+    "test": {
+      "examples": 59,
+      "labels": {"directional": 40, "irrelevant": 2, "neutral": 17},
+      "sources": {"gtfintechlab/federal_reserve_system": 59}
+    },
+    "train": {
+      "examples": 3151,
+      "labels": {"directional": 1690, "irrelevant": 35, "neutral": 1426},
+      "sources": {
+        "gtfintechlab/federal_reserve_system": 772,
+        "gtfintechlab/fomc_communication": 2379
+      }
+    },
+    "validation": {
+      "examples": 162,
+      "labels": {"directional": 105, "irrelevant": 4, "neutral": 53},
+      "sources": {"gtfintechlab/federal_reserve_system": 162}
+    }
+  },
+  "data_sha256": {
+    "test": "972af07d36ef289d3b24e3dda096b0adab3c6742ea61fb10586ae12ce7b585b3",
+    "train": "0723a4b8cdf3f1ca378e10c4b75a58833ef300fb41b575650de68de1e180bb45",
+    "validation": "23eb15995977ac5a142057e2e21d7a526392986556cdc9e55144de2b0067bd51"
+  },
+  "deduplication": {
+    "combined_training_conflicts": 7,
+    "combined_training_duplicates": 18,
+    "federal_conflicts": 0,
+    "federal_duplicates": 0,
+    "fomc_conflicts": 4,
+    "fomc_duplicates": 66,
+    "held_out_exact_overlaps_removed": true
+  },
+  "limitations": [
+    "The held-out irrelevant class has very few examples.",
+    "FOMC Communication has random published splits and is used only for training.",
+    "Labels measure topical/stance relevance, not observed market returns."
+  ],
+  "mapping": {
+    "federal_reserve_system": {
+      "dovish": "directional",
+      "hawkish": "directional",
+      "irrelevant": "irrelevant",
+      "neutral": "neutral"
+    },
+    "fomc_communication": {"0": "directional", "1": "directional", "2": "neutral"}
+  },
+  "sources": [
+    {"dataset": "gtfintechlab/federal_reserve_system", "license": "CC BY-NC-SA 4.0"},
+    {"dataset": "gtfintechlab/fomc_communication", "license": "CC BY-NC 4.0"}
+  ],
+  "splits": {
+    "test": "Federal Reserve years 2023-2024",
+    "train": "Federal Reserve years <=2018 plus all FOMC Communication rows",
+    "validation": "Federal Reserve years 2019-2022"
+  },
+  "task": "irrelevant | neutral | directional policy relevance"
+}

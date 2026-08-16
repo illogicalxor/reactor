@@ -1,0 +1,45 @@
+{
+  "base_model": "models/policy-signal-baseline-v2-large",
+  "best_validation_f1_macro": 0.591681,
+  "class_counts": {
+    "directional": 1690,
+    "irrelevant": 35,
+    "neutral": 1426
+  },
+  "class_weights": {
+    "directional": 0.621499,
+    "irrelevant": 8.0,
+    "neutral": 0.736559
+  },
+  "completed_epochs": 4.0,
+  "cuda": true,
+  "data_sha256": {
+    "test": "972af07d36ef289d3b24e3dda096b0adab3c6742ea61fb10586ae12ce7b585b3",
+    "train": "0723a4b8cdf3f1ca378e10c4b75a58833ef300fb41b575650de68de1e180bb45",
+    "validation": "23eb15995977ac5a142057e2e21d7a526392986556cdc9e55144de2b0067bd51"
+  },
+  "device": "NVIDIA GeForce RTX 3050",
+  "labels": {
+    "directional": 2,
+    "irrelevant": 0,
+    "neutral": 1
+  },
+  "selected_checkpoint": "checkpoint-1182",
+  "task": "policy relevance gate",
+  "training_parameters": {
+    "batch_size": 8,
+    "class_weight_cap": 8.0,
+    "epochs": 4.0,
+    "learning_rate": 1e-05,
+    "seed": 42
+  },
+  "validation": {
+    "eval_accuracy": 0.703704,
+    "eval_balanced_accuracy": 0.554193,
+    "eval_f1_macro": 0.591681,
+    "eval_loss": 0.942084,
+    "eval_runtime": 0.3092,
+    "eval_samples_per_second": 523.958,
+    "eval_steps_per_second": 67.92
+  }
+}

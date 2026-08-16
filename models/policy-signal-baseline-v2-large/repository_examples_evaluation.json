@@ -1,0 +1,78 @@
+{
+  "examples": 12,
+  "accuracy": 0.833333,
+  "predictions": [
+    {
+      "expected": "bullish",
+      "predicted": "bearish",
+      "confidence": 0.539975,
+      "text": "We are prepared to reduce rates as inflation moves sustainably toward target"
+    },
+    {
+      "expected": "bullish",
+      "predicted": "bullish",
+      "confidence": 0.923562,
+      "text": "There is room to begin cutting the federal funds rate at an upcoming meeting"
+    },
+    {
+      "expected": "bullish",
+      "predicted": "bullish",
+      "confidence": 0.777177,
+      "text": "Financial conditions can be eased without endangering price stability"
+    },
+    {
+      "expected": "bullish",
+      "predicted": "bullish",
+      "confidence": 0.908153,
+      "text": "Growth remains resilient and the disinflation process is continuing"
+    },
+    {
+      "expected": "bullish",
+      "predicted": "bullish",
+      "confidence": 0.828809,
+      "text": "Additional liquidity support will be available if market functioning worsens"
+    },
+    {
+      "expected": "bullish",
+      "predicted": "bullish",
+      "confidence": 0.890566,
+      "text": "A slower pace of balance sheet runoff may soon be appropriate"
+    },
+    {
+      "expected": "bearish",
+      "predicted": "bearish",
+      "confidence": 0.985951,
+      "text": "Rates will need to remain higher for longer to contain persistent inflation"
+    },
+    {
+      "expected": "bearish",
+      "predicted": "bearish",
+      "confidence": 0.988176,
+      "text": "Further rate increases may be necessary if price pressures continue"
+    },
+    {
+      "expected": "bearish",
+      "predicted": "bearish",
+      "confidence": 0.882734,
+      "text": "Persistent services inflation remains inconsistent with our price stability goal"
+    },
+    {
+      "expected": "bearish",
+      "predicted": "bullish",
+      "confidence": 0.677584,
+      "text": "We are accelerating balance sheet reduction and withdrawing accommodation"
+    },
+    {
+      "expected": "bearish",
+      "predicted": "bearish",
+      "confidence": 0.728504,
+      "text": "An additional tightening of financial conditions may be warranted"
+    },
+    {
+      "expected": "bearish",
+      "predicted": "bearish",
+      "confidence": 0.953167,
+      "text": "Downside risks to US economic activity have increased substantially"
+    }
+  ]
+}

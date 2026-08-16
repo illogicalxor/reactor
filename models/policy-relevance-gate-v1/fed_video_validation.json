@@ -1,0 +1,20 @@
+{
+  "asset_context": "US equities",
+  "bullish_probability": 0.1934247765304264,
+  "cuda_device": "NVIDIA GeForce RTX 3050",
+  "directional_coverage": 0.15485477178423238,
+  "directional_segment_count": 13,
+  "duration_seconds": 2703.978333,
+  "excluded_segment_count": 88,
+  "irrelevant_segment_count": 1,
+  "journalist_segment_count": 14,
+  "label": "bearish",
+  "low_signal": false,
+  "model": "faster-whisper:small.en + fine-tuned:models/policy-signal-baseline-v2-large + speaker-role:press-conference-text-v1 + relevance:fine-tuned:models/policy-relevance-gate-v1",
+  "neutral_segment_count": 73,
+  "policy_maker_segment_count": 87,
+  "signal_strength": 0.6131504469391471,
+  "source_video": "videos/fomc-press-conference-2026-07-29.mp4",
+  "unknown_speaker_segment_count": 0,
+  "wall_time_seconds": 93.509
+}

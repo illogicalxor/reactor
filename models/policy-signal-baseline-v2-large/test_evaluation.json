@@ -1,0 +1,55 @@
+{
+  "accuracy": 0.725,
+  "balanced_accuracy": 0.737852,
+  "brier_score_bullish": 0.206155,
+  "comparison_to_v1": {
+    "v1_accuracy": 0.675,
+    "v1_f1_macro": 0.674797
+  },
+  "confusion_matrix": {
+    "labels": [
+      "bearish",
+      "bullish"
+    ],
+    "matrix": [
+      [
+        15,
+        8
+      ],
+      [
+        3,
+        14
+      ]
+    ]
+  },
+  "covered_accuracy": 0.75,
+  "covered_examples": 36,
+  "examples": 40,
+  "expected_calibration_error_10_bins": 0.126813,
+  "f1_macro": 0.724828,
+  "gpu_inference_seconds": 0.331578,
+  "gpu_samples_per_second": 120.635,
+  "limitations": [
+    "Labels are a weak-supervision mapping from monetary stance, not observed asset returns.",
+    "Source licenses restrict commercial use.",
+    "The test set contains only 40 examples."
+  ],
+  "low_signal_margin": 0.12,
+  "low_signal_rate": 0.1,
+  "per_class": {
+    "bearish": {
+      "f1-score": 0.731707,
+      "precision": 0.833333,
+      "recall": 0.652174,
+      "support": 23
+    },
+    "bullish": {
+      "f1-score": 0.717949,
+      "precision": 0.636364,
+      "recall": 0.823529,
+      "support": 17
+    }
+  },
+  "split": "out-of-time test: source years 2023-2024",
+  "test_sha256": "4aa4620511eb16caf296107159bc155fa08985949bac51484e69915f0930b174"
+}

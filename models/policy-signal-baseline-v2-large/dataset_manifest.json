@@ -1,0 +1,49 @@
+{
+  "asset_context": "US equities",
+  "class_counts": {
+    "bearish": 801,
+    "bullish": 911
+  },
+  "data_sha256": {
+    "test": "4aa4620511eb16caf296107159bc155fa08985949bac51484e69915f0930b174",
+    "train": "2ffe7d51bb074dc4df82408521b33811675b2b457b6477d524616ef05d30d032",
+    "validation": "9083c6d762268c96ba1a6e14ed724cc5ae6b05d08513f9d6fdd36f263f3be4b7"
+  },
+  "deduplication": "Unicode NFKC, case-folded, non-word runs collapsed; held-out exact overlaps removed",
+  "excluded_labels": [
+    "neutral",
+    "irrelevant",
+    "internally conflicting duplicates"
+  ],
+  "held_out_splits": {
+    "test": "Federal Reserve System source years 2023-2024",
+    "validation": "Federal Reserve System source years 2019-2022"
+  },
+  "mapping": {
+    "dovish": "bullish",
+    "hawkish": "bearish"
+  },
+  "purpose": "larger research baseline using weak supervision; not trading validated",
+  "source_counts": {
+    "gtfintechlab/federal_reserve_system": 486,
+    "gtfintechlab/fomc_communication": 1214,
+    "repository/data/example.csv": 12
+  },
+  "sources": [
+    {
+      "dataset": "gtfintechlab/federal_reserve_system",
+      "license": "CC BY-NC-SA 4.0"
+    },
+    {
+      "dataset": "gtfintechlab/fomc_communication",
+      "license": "CC BY-NC 4.0"
+    },
+    {
+      "dataset": "repository/data/example.csv",
+      "license": "repository-local"
+    }
+  ],
+  "test_examples": 40,
+  "train_examples": 1712,
+  "validation_examples": 105
+}

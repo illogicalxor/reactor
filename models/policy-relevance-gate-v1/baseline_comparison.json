@@ -1,0 +1,29 @@
+{
+  "delta_trained_minus_heuristic": {
+    "accuracy": 0.18644,
+    "balanced_accuracy": 0.034804,
+    "f1_macro": 0.304262
+  },
+  "heuristic": {
+    "accuracy": 0.525424,
+    "balanced_accuracy": 0.597549,
+    "confusion_matrix": [
+      [2, 0, 0],
+      [3, 2, 12],
+      [9, 4, 27]
+    ],
+    "f1_macro": 0.369152
+  },
+  "labels": ["irrelevant", "neutral", "directional"],
+  "test_examples": 59,
+  "trained": {
+    "accuracy": 0.711864,
+    "balanced_accuracy": 0.632353,
+    "confusion_matrix": [
+      [1, 1, 0],
+      [0, 11, 6],
+      [0, 10, 30]
+    ],
+    "f1_macro": 0.673414
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "asset_scope": "US markets",
+  "base_model": "FacebookAI/roberta-base",
+  "data_sha256": {
+    "train": "2d86707f9bd5a36195577f59ee1afbacee5275b781efffe45ad53eccc4490bc9",
+    "validation": "9083c6d762268c96ba1a6e14ed724cc5ae6b05d08513f9d6fdd36f263f3be4b7"
+  },
+  "evaluation": {
+    "epoch": 3.0,
+    "eval_accuracy": 0.761905,
+    "eval_f1_macro": 0.716553,
+    "eval_loss": 0.471233,
+    "eval_runtime": 0.3171,
+    "eval_samples_per_second": 331.177,
+    "eval_steps_per_second": 44.157
+  },
+  "labels": {
+    "bearish": 0,
+    "bullish": 1
+  },
+  "language": "en",
+  "training_parameters": {
+    "batch_size": 8,
+    "epochs": 3.0,
+    "learning_rate": 2e-05,
+    "seed": 42
+  }
+}

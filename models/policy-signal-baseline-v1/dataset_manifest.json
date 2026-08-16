@@ -1,0 +1,25 @@
+{
+  "asset_context": "US equities",
+  "counts": {
+    "test": 40,
+    "train": 486,
+    "validation": 105
+  },
+  "dataset": "gtfintechlab/federal_reserve_system",
+  "dataset_config": "5768",
+  "excluded_labels": [
+    "neutral",
+    "irrelevant"
+  ],
+  "license": "CC BY-NC-SA 4.0",
+  "mapping": {
+    "dovish": "bullish",
+    "hawkish": "bearish"
+  },
+  "purpose": "research baseline using weak supervision; not trading validated",
+  "splits": {
+    "test": "source_year >= 2023",
+    "train": "source_year <= 2018",
+    "validation": "2019 <= source_year <= 2022"
+  }
+}
