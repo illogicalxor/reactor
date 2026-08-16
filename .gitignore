@@ -12,3 +12,4 @@ models/**/checkpoint-*/
 models/**/.cache/
 data/*.csv
 !data/example.csv
+!data/*.example.csv

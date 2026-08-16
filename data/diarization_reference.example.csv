@@ -1,0 +1,4 @@
+start,end,speaker_role,speaker_id
+0.0,30.0,policy_maker,chair
+30.0,42.5,journalist,reporter_1
+42.5,70.0,policy_maker,chair

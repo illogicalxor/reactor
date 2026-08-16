@@ -48,6 +48,22 @@ press conference, but it is role attribution, not biometric identity verificatio
 Set the backend to `none` for speeches already known to contain only the policy
 maker.
 
+Evaluate the acoustic role mapping against a manually annotated timeline before
+promotion. The CSV columns are `start,end,speaker_role,speaker_id`; an example is
+available at `data/diarization_reference.example.csv`.
+
+```bash
+export POLICY_SIGNAL_SPEAKER_DIARIZATION_TOKEN=hf_...
+policy-signal-evaluate-diarization \
+  --audio videos/fomc-press-conference.wav \
+  --reference data/fomc-press-conference.reference.csv \
+  --device cuda \
+  --output artifacts/diarization-evaluation.json
+```
+
+The report includes zero-collar DER, missed speech, false alarms, role confusion,
+and duration-based precision/recall for the policy maker and journalists.
+
 The relevance gate classifies authority turns internally as `irrelevant`, `neutral`,
 or `directional`; only directional turns reach the binary model. A heuristic remains
 the portable default, and the repository also contains the separately trained
