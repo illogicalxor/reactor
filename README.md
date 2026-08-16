@@ -283,6 +283,20 @@ measurement. A newly trained checkpoint now includes
 The current `v1` predates this change and therefore runs at temperature `1.0` until
 it is retrained on the GPU machine.
 
+For a complete, isolated GPU run that creates a new `v2` without overwriting `v1`:
+
+```bash
+chmod +x scripts/train_relevance_gpu.sh
+scripts/train_relevance_gpu.sh
+```
+
+The script creates `.venv-train` with uv, installs `.[train,dev]`, verifies CUDA and
+Git LFS weights, prepares chronological splits, trains, calibrates, evaluates the
+untouched test and repository regression sets, and leaves the new artifact in
+`models/policy-relevance-gate-v2`. Pass human-reviewed supplemental training CSVs as
+positional arguments. Hyperparameters and resume behavior are configurable through
+environment variables documented by `scripts/train_relevance_gpu.sh --help`.
+
 ### Offline training, inference-only production
 
 Training and live inference are separate processes. The production image does not

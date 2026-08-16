@@ -3,8 +3,10 @@ __pycache__/
 *.egg-info/
 .env
 .venv/
+.venv-train/
 .pytest_cache/
 .ruff_cache/
+.training/
 .coverage
 htmlcov/
 # Keep final model artifacts visible to Git, but exclude resumable Trainer state.
