@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "policy-signal"
+version = "0.1.0"
+description = "Bullish/bearish classification of US policy-maker speeches from video"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "fastapi>=0.116,<1",
+  "faster-whisper>=1.1,<2",
+  "numpy>=1.26,<3",
+  "pydantic-settings>=2.8,<3",
+  "python-multipart>=0.0.20,<1",
+  "torch>=2.5,<3",
+  "transformers>=4.49,<5",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<1",
+  "pytest>=8.3,<9",
+  "ruff>=0.11,<1",
+]
+train = [
+  "accelerate>=1.4,<2",
+  "datasets>=3.3,<4",
+  "evaluate>=0.4,<1",
+  "scikit-learn>=1.6,<2",
+]
+diarization = [
+  "pyannote.audio>=4,<5",
+]
+
+[project.scripts]
+policy-signal = "policy_signal.api:run"
+policy-signal-train = "policy_signal.train:main"
+policy-signal-prepare-relevance = "policy_signal.prepare_relevance_data:main"
+policy-signal-train-relevance = "policy_signal.train_relevance:main"
+policy-signal-fetch-whisper = "policy_signal.fetch_whisper:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/policy_signal"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

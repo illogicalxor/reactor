@@ -1,0 +1,625 @@
+POLICY SIGNAL: OPERATIONS, TRAINING, DATA, AND DEPLOYMENT GUIDE
+================================================================
+
+1. PURPOSE AND SCOPE
+--------------------
+
+Policy Signal is an English-only NLP service for US markets. It receives video or
+audio of a US policy maker, extracts and transcribes the English speech, and returns
+a bullish or bearish language signal for a specified US asset.
+
+The system has two independently deployed models:
+
+1. faster-whisper converts English audio into timestamped text.
+2. A text classifier maps each transcript segment to bullish or bearish.
+
+The classifier is the component trained by this project. Whisper remains frozen and
+uses pretrained weights. Classifier training therefore needs text transcripts, not
+videos. Videos are still needed to test transcription accuracy and the complete live
+pipeline.
+
+The output is a directional language signal. It is not a price forecast, does not
+automatically measure the surprise relative to market expectations, and is not
+financial advice.
+
+
+2. SYSTEM REQUIREMENTS
+----------------------
+
+- Python 3.11, 3.12, or 3.13. Python 3.12 is recommended.
+- FFmpeg and ffprobe available in PATH.
+- Sufficient storage for model checkpoints and training data.
+- A CUDA-capable GPU is strongly recommended for repeated training. CPU training is
+  possible but slow.
+- Docker is optional and is primarily intended for inference deployment.
+
+
+3. LOCAL INSTALLATION
+---------------------
+
+From the repository root:
+
+    cp .env.example .env
+    python3.12 -m venv .venv
+    . .venv/bin/activate
+    pip install -e '.[dev]'
+
+The default development configuration uses:
+
+- Classifier backend: zero-shot
+- Classifier: facebook/bart-large-mnli
+- Transcriber: English faster-whisper small.en
+- Default asset context: US equities
+- Device: CPU
+- Whisper compute type: int8
+
+The model checkpoints are downloaded during the first model load in development.
+
+
+4. RUNNING THE API
+------------------
+
+Start the service locally:
+
+    uvicorn policy_signal.api:app --host 0.0.0.0 --port 8000
+
+Alternatively:
+
+    policy-signal
+
+Health check:
+
+    curl http://localhost:8000/healthz
+
+The health response reports the US market scope, English language, model paths,
+classifier backend, local-only mode, and startup warmup status.
+
+
+5. ANALYZING A VIDEO OR AUDIO FILE
+----------------------------------
+
+Endpoint:
+
+    POST /v1/analyze-video
+
+Example:
+
+    curl -X POST http://localhost:8000/v1/analyze-video \
+      -F file=@fed-speech.mp4 \
+      -F 'asset_context=S&P 500'
+
+Useful US asset contexts include:
+
+- S&P 500
+- Nasdaq 100
+- US equities
+- 2-year Treasury price
+- 10-year Treasury yield
+- US dollar
+- Regional bank equities
+
+Do not mix fundamentally different assets under the same asset_context value. A
+hawkish statement may be bearish for equities and Treasury prices but bullish for
+the US dollar or Treasury yields.
+
+Important response fields:
+
+- label: bullish or bearish
+- confidence: probability assigned to the selected class
+- bullish_probability and bearish_probability
+- signal_strength: absolute difference between the two class probabilities
+- low_signal: true when the difference is below the configured abstention margin
+- transcript: complete detected text
+- segments: timestamped segment classifications
+- model: ASR and classifier identifiers
+
+Consumers should normally abstain when low_signal is true.
+
+
+6. REAL-TIME STREAMING
+----------------------
+
+Connect to:
+
+    ws://localhost:8000/v1/analyze-stream
+
+Send this JSON object as the first WebSocket message:
+
+    {
+      "format": "pcm_s16le",
+      "sample_rate": 16000,
+      "window_seconds": 8,
+      "language": "en",
+      "asset_context": "S&P 500"
+    }
+
+Then send binary frames containing mono signed 16-bit little-endian PCM. Extract the
+PCM from the video's audio track using an AudioWorklet, FFmpeg, or GStreamer.
+
+The server returns:
+
+- window: classification for the current audio window
+- rolling: recency-weighted classification for approximately the last five minutes
+- stream_seconds: processed stream duration
+
+Commands:
+
+    {"command":"flush"}
+    {"command":"end"}
+
+Window sizes between 2 and 30 seconds are accepted. Smaller windows reduce latency
+but provide less linguistic context and can lower classification quality.
+
+
+7. WHERE TO GET POLICY-MAKER TEXT, AUDIO, AND VIDEO
+---------------------------------------------------
+
+Use official sources whenever possible. Preserve the source URL, speaker, publication
+time, event time, document type, and retrieval date for every record.
+
+Federal Reserve FOMC materials
+    https://www.federalreserve.gov/monetarypolicy/fomc.htm
+
+    Contains FOMC statements, minutes, projections, press conference videos, and
+    press conference transcripts. This should be the primary corpus.
+
+Federal Reserve speeches and testimony
+    https://www.federalreserve.gov/newsevents/speeches-testimony.htm
+
+    Contains prepared speeches and congressional testimony from Federal Reserve
+    officials, with yearly archives.
+
+Federal Reserve historical FOMC materials
+    https://www.federalreserve.gov/monetarypolicy/fomc_historical.htm
+
+    Contains historical transcripts, policy statements, minutes, Tealbooks, and
+    related material. Detailed internal meeting transcripts are released with a
+    substantial lag. Use them for language or stance pretraining, not market-reaction
+    labels at the original meeting time, because the market did not hear the internal
+    discussion then.
+
+US Treasury statements and remarks
+    https://home.treasury.gov/news/press-releases/statements-remarks/secretary
+
+    Useful for fiscal policy, Treasury issuance, sanctions, trade, and US dollar
+    policy communication.
+
+SEC speeches and statements
+    https://www.sec.gov/newsroom/speeches-statements
+
+    Useful for securities regulation, market structure, banking, crypto, and
+    enforcement-sensitive sectors.
+
+Prepared remarks may be published before the speaker delivers them. For price labels,
+record the first time the information became public, not merely the scheduled speech
+time. For unscripted Q&A, use the actual audio/video timestamp.
+
+
+8. EXISTING ANNOTATED NLP DATASETS
+----------------------------------
+
+These datasets can provide a stance-detection warm start:
+
+Federal Reserve System dataset
+    https://huggingface.co/datasets/gtfintechlab/federal_reserve_system
+
+    Approximately 1,000 sentences annotated for hawkish, dovish, neutral, irrelevant,
+    forward-looking language, and uncertainty.
+
+FOMC Communication dataset
+    https://huggingface.co/datasets/gtfintechlab/fomc_communication
+
+    FOMC communication corpus associated with the Trillion Dollar Words research.
+
+FOMC Communication Counterfactual dataset
+    https://huggingface.co/datasets/TextCEsInFinance/fomc-communication-counterfactual
+
+    A smaller sentence dataset with manually annotated hawkish, dovish, and neutral
+    examples plus counterfactual examples.
+
+Review every dataset license before use. Several Federal Reserve NLP datasets use
+Creative Commons NonCommercial licenses. They may be suitable for research but not
+for weights used in a commercial trading system without separate permission.
+
+Hawkish/dovish annotations are not the final target. Dovish language is often bullish
+for US equities, but an easing signal caused by severe recession risk can be bearish.
+Use stance data for pretraining or weak supervision, then train the final classifier
+against asset-specific market reactions.
+
+
+9. WHERE TO GET MARKET DATA FOR LABELS
+--------------------------------------
+
+US Monetary Policy Event-Study Database, Federal Reserve Bank of San Francisco
+    https://www.frbsf.org/research-and-insights/data-and-indicators/us-monetary-policy-event-study-database/
+
+    Recommended free starting point. It contains high-frequency changes in interest
+    rates and asset prices around FOMC statements, press conferences, combined policy
+    events, and minutes. Instruments include money-market futures, OIS, Treasuries,
+    TIPS, US stock indexes, and US dollar exchange rates. It is best for event-level
+    labels and research validation, but not necessarily individual speech segments.
+
+CME Group market data and DataMine
+    https://www.cmegroup.com/market-data/market-data-api.html
+
+    Recommended direct source for E-mini S&P 500 futures, Nasdaq futures, Treasury
+    futures, Fed Funds futures, and related instruments. Futures are useful when a
+    policy speech occurs outside regular US equity trading hours.
+
+NYSE Daily TAQ
+    https://www.nyse.com/data-products/catalog/daily-taq
+
+    Comprehensive historical US equity trades, quotes, and NBBO. Suitable for precise
+    SPY or sector ETF labels. It is a licensed commercial product.
+
+Databento
+    https://databento.com/docs
+
+    Developer-friendly historical and live APIs for US futures, equities, options,
+    trades, quotes, OHLCV, and order-book data. Verify dataset coverage and licensing
+    for the exact venue and period required.
+
+Alpha Vantage
+    https://www.alphavantage.co/documentation/
+
+    Reasonable for a low-cost prototype using intraday OHLCV. Verify the plan's history,
+    rate limits, redistribution terms, timestamp semantics, and adjusted/unadjusted
+    behavior before relying on it for production research.
+
+FRED S&P 500 series
+    https://fred.stlouisfed.org/series/SP500
+
+    Useful for daily research and macro context, but daily observations are not
+    granular enough for 5-minute or 30-minute policy-speech labels.
+
+Market-data licenses often restrict storage, derived data, redistribution, or use by
+third parties. Confirm that the chosen license permits model training and deployment.
+
+
+10. RECOMMENDED DATASET SCHEMA
+------------------------------
+
+Keep a canonical research table with at least:
+
+    event_id
+    event_type
+    event_time_utc
+    first_public_time_utc
+    speaker
+    source_url
+    transcript_source
+    segment_start_seconds
+    segment_end_seconds
+    text
+    asset_context
+    instrument
+    venue
+    price_timestamp_before
+    price_before
+    price_timestamp_after
+    price_after
+    horizon_seconds
+    return_bps
+    label
+    split
+
+The current trainer consumes text, label, and asset_context. Additional columns are
+retained for research provenance and are ignored by the tokenizer.
+
+Always store timestamps in UTC. Preserve the original exchange timestamp and timezone
+metadata as separate fields when available. Handle US daylight-saving transitions
+explicitly.
+
+
+11. GENERATING BULLISH AND BEARISH LABELS
+------------------------------------------
+
+For a segment ending at time t, calculate a forward return:
+
+    return_h = log(mid_price[t + horizon] / mid_price[t])
+
+Use midpoint prices when quote data is available. If only bars are available, document
+whether open, close, or VWAP is used. Never use a price from before the segment ended
+as the forward endpoint.
+
+Example starting rule for S&P 500 exposure:
+
+    return_5m >= +0.10%   -> bullish
+    return_5m <= -0.10%   -> bearish
+    -0.10% < return_5m < +0.10% -> neutral; omit from binary training
+
+The 0.10% threshold is only an example. Calibrate it using realized volatility,
+bid/ask spread, timestamp uncertainty, horizon, and expected transaction costs.
+
+Recommended instruments:
+
+- During regular hours: SPY midpoint or the active ES contract.
+- Outside regular hours: the active ES contract.
+- Rates: active Treasury futures or yield/OIS changes, with direction defined clearly.
+- Dollar: a documented dollar index or liquid currency futures basket.
+
+For futures, record the exact active contract. Do not create event labels across a
+contract roll without an explicit roll adjustment.
+
+Use multiple horizons as separate experiments, such as 1 minute, 5 minutes, 30 minutes,
+and end of session. Do not silently combine them into one label.
+
+Exclude or flag:
+
+- Simultaneous macro releases or unrelated breaking news.
+- Trading halts and stale quotes.
+- Illiquid periods with abnormal spreads.
+- Segments with uncertain transcription or timing.
+- Prepared text published before the video delivery.
+- Returns whose magnitude falls inside the neutral band.
+
+
+12. DATA QUALITY AND SPLITTING
+------------------------------
+
+Split by complete event and date, never by random sentence. All segments from one
+FOMC meeting, press conference, testimony, or speech must belong to the same split.
+Otherwise the model can memorize event-specific phrases and leak them into validation.
+
+Recommended split design:
+
+- Training: oldest events.
+- Validation: later, non-overlapping events used for model selection.
+- Test: newest untouched events used only for the final decision.
+- Final paper-trading evaluation: events occurring after model promotion.
+
+Also:
+
+- Deduplicate prepared remarks, transcript copies, and repeated quotations.
+- Keep one canonical source and hashes of raw files.
+- Preserve event-level sample weights so a long press conference does not dominate
+  the dataset merely because it creates more segments.
+- Monitor class balance by year, speaker, event type, asset, and horizon.
+- Review a sample manually and measure inter-annotator agreement if humans label data.
+- Keep test data immutable across model versions.
+
+
+13. INSTALLING TRAINING DEPENDENCIES
+------------------------------------
+
+Training must happen outside the live inference server:
+
+    python3.12 -m venv .venv
+    . .venv/bin/activate
+    pip install -e '.[train]'
+
+The default English backbone is FacebookAI/roberta-base.
+
+
+14. TRAINING OFFLINE
+--------------------
+
+Prepare CSV files containing at least:
+
+    text,label,asset_context
+    "We can begin reducing the policy rate",bullish,US equities
+    "Rates may need to remain higher for longer",bearish,US equities
+
+Run:
+
+    policy-signal-train \
+      --train data/train.csv \
+      --validation data/validation.csv \
+      --output artifacts/policy-signal-v1 \
+      --epochs 3 \
+      --batch-size 8 \
+      --learning-rate 2e-5
+
+If no validation file is provided, the script creates a random 20% split. This is
+convenient for smoke tests but is not acceptable for final research. Provide an
+event-separated validation file.
+
+Reduce batch size if GPU memory is insufficient. Increasing epochs is not automatically
+better; select the checkpoint using out-of-time validation F1 and calibration.
+
+The output directory includes:
+
+- model.safetensors or equivalent model weights
+- config.json with label mappings
+- tokenizer files
+- Trainer checkpoints
+- training_manifest.json with metrics, parameters, language, scope, and dataset hashes
+
+
+15. RESUMING AN INTERRUPTED TRAINING RUN
+----------------------------------------
+
+To restore model weights, optimizer, scheduler, and training state:
+
+    policy-signal-train \
+      --train data/train.csv \
+      --validation data/validation.csv \
+      --output artifacts/policy-signal-v1 \
+      --resume-from-checkpoint artifacts/policy-signal-v1/checkpoint-1000
+
+Use resume-from-checkpoint only to continue the same experiment with compatible data
+and settings.
+
+
+16. PERIODIC OFFLINE RETRAINING
+-------------------------------
+
+Keep the current version live while a new version is trained offline. Use the previous
+promoted classifier as the next base model:
+
+    policy-signal-train \
+      --base-model artifacts/policy-signal-v1 \
+      --train data/train-v2.csv \
+      --validation data/validation-v2.csv \
+      --output artifacts/policy-signal-v2
+
+The v2 training set should contain the historical training corpus plus new examples,
+or a carefully balanced replay sample. Training only on the latest events can cause
+catastrophic forgetting.
+
+Never modify v1 in place. Every promoted model must have an immutable versioned
+directory, dataset hashes, evaluation record, and rollback target.
+
+
+17. DOWNLOADING WHISPER FOR OFFLINE DEPLOYMENT
+----------------------------------------------
+
+On the connected training or artifact-building machine:
+
+    policy-signal-fetch-whisper \
+      --model small.en \
+      --output artifacts/whisper-small.en
+
+This downloads the complete CTranslate2 faster-whisper checkpoint. The inference host
+will use this local directory and will not contact the model hub.
+
+
+18. PACKAGING MODEL ARTIFACTS
+-----------------------------
+
+Package both the classifier and ASR directories:
+
+    tar -czf policy-signal-v1.tar.gz -C artifacts \
+      policy-signal-v1 whisper-small.en
+
+    sha256sum policy-signal-v1.tar.gz
+
+Copy the archive and its expected checksum through the approved deployment channel.
+Verify the checksum before extraction.
+
+Do not deploy only model.safetensors. The classifier also requires tokenizer files,
+label mappings, and model configuration. The live system also requires the separate
+Whisper checkpoint.
+
+
+19. INFERENCE-ONLY PRODUCTION CONFIGURATION
+-------------------------------------------
+
+Start from .env.production.example:
+
+    POLICY_SIGNAL_CLASSIFIER_BACKEND=fine-tuned
+    POLICY_SIGNAL_CLASSIFIER_MODEL=/models/policy-signal-v1
+    POLICY_SIGNAL_WHISPER_MODEL=/models/whisper-small.en
+    POLICY_SIGNAL_WHISPER_DEVICE=cpu
+    POLICY_SIGNAL_WHISPER_COMPUTE_TYPE=int8
+    POLICY_SIGNAL_DEFAULT_ASSET_CONTEXT=US equities
+    POLICY_SIGNAL_LOCAL_MODELS_ONLY=true
+    POLICY_SIGNAL_WARM_MODELS_ON_STARTUP=true
+
+LOCAL_MODELS_ONLY performs local directory checks and enables Hugging Face offline
+mode. A missing model path causes startup failure instead of a remote download.
+
+WARM_MODELS_ON_STARTUP loads both immutable checkpoints before the server accepts live
+traffic. This moves model-loading latency from the first live speech into deployment.
+
+The production Docker image installs runtime dependencies only. It does not install
+the optional datasets, Trainer, evaluation, or scikit-learn training stack.
+
+
+20. PRODUCTION DEPLOYMENT
+-------------------------
+
+Extract the artifact under a directory such as:
+
+    /srv/policy-models/policy-signal-v1
+    /srv/policy-models/whisper-small.en
+
+Run with read-only model mounts:
+
+    docker build -t policy-signal .
+
+    docker run --rm -p 8000:8000 \
+      --env-file .env.production \
+      --mount type=bind,src=/srv/policy-models,dst=/models,readonly \
+      --tmpfs /tmp \
+      policy-signal
+
+The inference process does not load datasets, create an optimizer, call train(), or
+modify weights. Temporary media is written under /tmp and removed after processing.
+
+For GPU inference, use an appropriate CUDA-enabled PyTorch/container setup and set:
+
+    POLICY_SIGNAL_WHISPER_DEVICE=cuda
+    POLICY_SIGNAL_WHISPER_COMPUTE_TYPE=float16
+
+
+21. MODEL PROMOTION AND ROLLBACK
+--------------------------------
+
+Recommended release process:
+
+1. Train v2 offline while v1 remains live.
+2. Evaluate v2 against the immutable out-of-time test set.
+3. Verify dataset and artifact SHA-256 hashes.
+4. Run video, transcription, classifier, latency, and load tests in staging.
+5. Copy v2 into a new read-only production directory.
+6. Change CLASSIFIER_MODEL to /models/policy-signal-v2.
+7. Restart inference workers and verify /healthz.
+8. Compare live low-signal rate, class balance, latency, and calibration monitoring.
+9. Roll back by restoring the v1 path and restarting if release gates fail.
+
+Never overwrite model files currently mapped by a live process.
+
+
+22. EVALUATION GATES
+--------------------
+
+At minimum, record:
+
+- Macro and per-class F1.
+- Balanced accuracy and confusion matrix.
+- Precision and recall for bullish and bearish.
+- Brier score or another probability-calibration metric.
+- Expected calibration error and reliability plots.
+- Coverage and accuracy after abstaining on low_signal.
+- Results by speaker, year, event type, asset, horizon, and volatility regime.
+- Out-of-time performance.
+- Whisper word error rate on actual broadcast audio.
+- End-to-end latency per streaming window.
+- Paper-trading results including realistic costs, spread, and signal latency.
+
+Do not choose a model from accuracy alone. A majority-class classifier can have good
+accuracy and still be unusable. Require stable out-of-time performance and calibrated
+probabilities.
+
+
+23. TESTING THE CODEBASE
+------------------------
+
+Core tests do not download model checkpoints:
+
+    python -m unittest discover -s tests -v
+
+The tests cover:
+
+- English policy-language heuristic behavior.
+- Zero-shot and fine-tuned adapter label mapping.
+- Transcript segment merging.
+- Recency-weighted aggregation.
+- Low-signal behavior.
+- Pipeline weight warmup.
+- Real FFmpeg normalization and video audio extraction.
+- End-to-end pipeline behavior with deterministic test doubles.
+
+Before promotion, additionally test with the exact packaged classifier and Whisper
+directories in LOCAL_MODELS_ONLY mode.
+
+
+24. RECOMMENDED FIRST DATA BUILD
+--------------------------------
+
+A practical initial research sequence is:
+
+1. Download official FOMC statements, press conference transcripts, and videos.
+2. Add official Fed speeches and testimony with reliable first-public timestamps.
+3. Use annotated hawkish/dovish datasets only as a research warm start and only when
+   their licenses permit the intended use.
+4. Obtain event-level labels from the SF Fed US Monetary Policy Event-Study Database.
+5. Obtain intraday ES or SPY data for segment-level 5-minute and 30-minute returns.
+6. Build separate datasets for each asset and horizon.
+7. Remove neutral-band examples from binary training, but retain them for abstention
+   and calibration analysis.
+8. Split by complete event and date.
+9. Train v1 offline, promote only after out-of-time evaluation, and paper trade before
+   any capital is exposed.
+

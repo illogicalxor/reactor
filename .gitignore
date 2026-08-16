@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+# Keep final model artifacts visible to Git, but exclude resumable Trainer state.
+models/**/checkpoint-*/
+data/*.csv
+!data/example.csv
