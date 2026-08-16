@@ -170,6 +170,13 @@ from the video's audio track. The API processes 2–30 second windows and return
 and close. An `AudioWorklet` can extract PCM from a browser `<video>`/`MediaStream`;
 FFmpeg or GStreamer can do this for a broadcast feed.
 
+Each WebSocket connection owns isolated attribution state. Reporter questions may
+span multiple audio windows, `turn_id` remains stable while the same answer
+continues, and `question_turn_id` links the eventual answer to the complete
+question. Acoustic pyannote cluster labels are still local to each diarization run;
+use the text backend for stateful streaming until voiceprint-based cluster matching
+is configured.
+
 ## Supervised training
 
 Zero-shot inference is a starting point, not a trading-validated model. Install the

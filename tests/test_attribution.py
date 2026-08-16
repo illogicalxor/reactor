@@ -34,6 +34,43 @@ class PressConferenceRoleAssignerTests(unittest.TestCase):
         )
         self.assertEqual(result[2].question_turn_id, result[1].turn_id)
 
+    def test_preserves_question_and_answer_turns_across_stream_windows(self) -> None:
+        assigner = PressConferenceRoleAssigner()
+        state = assigner.create_state()
+
+        first = assigner.assign(
+            Path("window-1.wav"),
+            [
+                TranscriptSegment(0, 4, "Inflation remains elevated.", "en"),
+                TranscriptSegment(4, 8, "Reuters. Chair, could interest rates", "en"),
+            ],
+            state=state,
+        )
+        second = assigner.assign(
+            Path("window-2.wav"),
+            [
+                TranscriptSegment(0, 3, "remain high for longer?", "en"),
+                TranscriptSegment(3, 8, "We will decide meeting by meeting.", "en"),
+            ],
+            state=state,
+        )
+        third = assigner.assign(
+            Path("window-3.wav"),
+            [TranscriptSegment(0, 4, "Incoming data will guide us.", "en")],
+            state=state,
+        )
+
+        self.assertEqual(first[0].turn_id, "answer_0001")
+        self.assertEqual(first[1].turn_id, "question_0001")
+        self.assertEqual(second[0].turn_id, "question_0001")
+        self.assertEqual(second[1].turn_id, "answer_0002")
+        self.assertEqual(third[0].turn_id, "answer_0002")
+        self.assertEqual(second[1].question_turn_id, "question_0001")
+        self.assertEqual(
+            second[1].question_context,
+            "Reuters. Chair, could interest rates remain high for longer?",
+        )
+
 
 @dataclass(frozen=True)
 class FakeTurn:

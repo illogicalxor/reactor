@@ -65,8 +65,10 @@ Implementado neste ciclo:
   incluindo respostas neutras ou irrelevantes como 50/50 e `low_signal=true`.
 
 O rótulo único do evento agora é uma visão adicional e não substitui a série por
-resposta. O próximo passo é manter fronteiras e IDs de turno persistentes entre as
-janelas do WebSocket, em vez de limitá-los a cada janela analisada.
+resposta. Cada conexão WebSocket mantém estado isolado de pergunta, resposta,
+locutor textual e contadores de turno, inclusive quando uma pergunta atravessa
+janelas. A associação acústica de clusters entre janelas continua dependente de
+voiceprint, pois os IDs anônimos do pyannote são locais a cada execução.
 
 ## Fase 2: separar Chair e jornalistas
 

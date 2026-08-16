@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import threading
 from collections.abc import Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Protocol
 
@@ -14,57 +14,72 @@ class SpeakerAttributionError(RuntimeError):
     pass
 
 
+@dataclass(slots=True)
+class SpeakerAttributionState:
+    """Mutable attribution state owned by one streaming connection."""
+
+    detected_role: SpeakerRole = "policy_maker"
+    detected_speaker: str = "policy_maker_0"
+    detected_journalist_index: int = 0
+    active_role: SpeakerRole | None = None
+    active_turn_id: str | None = None
+    question_index: int = 0
+    answer_index: int = 0
+    unknown_index: int = 0
+    question_parts: list[str] = field(default_factory=list)
+    latest_question: str | None = None
+    latest_question_turn_id: str | None = None
+
+
 class SpeakerRoleAssigner(Protocol):
     @property
     def name(self) -> str: ...
 
     def load(self) -> None: ...
 
+    def create_state(self) -> SpeakerAttributionState: ...
+
     def assign(
         self,
         audio_path: Path,
         segments: Sequence[TranscriptSegment],
+        *,
+        state: SpeakerAttributionState | None = None,
     ) -> list[TranscriptSegment]: ...
 
 
 def _attach_question_context(
     segments: Sequence[TranscriptSegment],
+    state: SpeakerAttributionState | None = None,
 ) -> list[TranscriptSegment]:
     """Assign stable turn IDs and attach each reporter turn to its answer."""
+    state = state or SpeakerAttributionState()
     result: list[TranscriptSegment] = []
-    question_parts: list[str] = []
-    latest_question: str | None = None
-    latest_question_turn_id: str | None = None
-    active_role: SpeakerRole | None = None
-    active_turn_id: str | None = None
-    question_index = 0
-    answer_index = 0
-    unknown_index = 0
 
     for segment in segments:
-        if segment.speaker_role != active_role:
-            active_role = segment.speaker_role
-            if active_role == "journalist":
-                question_index += 1
-                active_turn_id = f"question_{question_index:04d}"
-                question_parts = []
-            elif active_role == "policy_maker":
-                answer_index += 1
-                active_turn_id = f"answer_{answer_index:04d}"
-                if question_parts:
-                    latest_question = " ".join(question_parts).strip()
-                    latest_question_turn_id = f"question_{question_index:04d}"
-                    question_parts = []
+        if segment.speaker_role != state.active_role:
+            state.active_role = segment.speaker_role
+            if state.active_role == "journalist":
+                state.question_index += 1
+                state.active_turn_id = f"question_{state.question_index:04d}"
+                state.question_parts = []
+            elif state.active_role == "policy_maker":
+                state.answer_index += 1
+                state.active_turn_id = f"answer_{state.answer_index:04d}"
+                if state.question_parts:
+                    state.latest_question = " ".join(state.question_parts).strip()
+                    state.latest_question_turn_id = f"question_{state.question_index:04d}"
+                    state.question_parts = []
             else:
-                unknown_index += 1
-                active_turn_id = f"unknown_{unknown_index:04d}"
+                state.unknown_index += 1
+                state.active_turn_id = f"unknown_{state.unknown_index:04d}"
 
         if segment.speaker_role == "journalist":
-            question_parts.append(segment.text.strip())
+            state.question_parts.append(segment.text.strip())
             result.append(
                 replace(
                     segment,
-                    turn_id=active_turn_id,
+                    turn_id=state.active_turn_id,
                     question_turn_id=None,
                     question_context=None,
                 )
@@ -74,16 +89,16 @@ def _attach_question_context(
             result.append(
                 replace(
                     segment,
-                    turn_id=active_turn_id,
-                    question_turn_id=latest_question_turn_id,
-                    question_context=latest_question,
+                    turn_id=state.active_turn_id,
+                    question_turn_id=state.latest_question_turn_id,
+                    question_context=state.latest_question,
                 )
             )
             continue
         result.append(
             replace(
                 segment,
-                turn_id=active_turn_id,
+                turn_id=state.active_turn_id,
                 question_turn_id=None,
                 question_context=None,
             )
@@ -101,10 +116,15 @@ class PassthroughRoleAssigner:
     def load(self) -> None:
         return None
 
+    def create_state(self) -> SpeakerAttributionState:
+        return SpeakerAttributionState()
+
     def assign(
         self,
         audio_path: Path,
         segments: Sequence[TranscriptSegment],
+        *,
+        state: SpeakerAttributionState | None = None,
     ) -> list[TranscriptSegment]:
         del audio_path
         attributed = [
@@ -115,7 +135,7 @@ class PassthroughRoleAssigner:
             )
             for segment in segments
         ]
-        return _attach_question_context(attributed)
+        return _attach_question_context(attributed, state)
 
 
 class PressConferenceRoleAssigner:
@@ -146,6 +166,9 @@ class PressConferenceRoleAssigner:
     def load(self) -> None:
         return None
 
+    def create_state(self) -> SpeakerAttributionState:
+        return SpeakerAttributionState()
+
     @classmethod
     def _starts_reporter_turn(cls, text: str) -> bool:
         return bool(cls._OUTLET.search(text) or cls._GREETING.search(text))
@@ -154,25 +177,25 @@ class PressConferenceRoleAssigner:
         self,
         audio_path: Path,
         segments: Sequence[TranscriptSegment],
+        *,
+        state: SpeakerAttributionState | None = None,
     ) -> list[TranscriptSegment]:
         del audio_path
+        state = state or self.create_state()
         attributed: list[TranscriptSegment] = []
-        current_role = "policy_maker"
-        current_speaker = "policy_maker_0"
-        journalist_index = 0
 
         for segment in segments:
             text = segment.text.strip()
             if self._starts_reporter_turn(text):
-                journalist_index += 1
-                current_role = "journalist"
-                current_speaker = f"journalist_{journalist_index}"
+                state.detected_journalist_index += 1
+                state.detected_role = "journalist"
+                state.detected_speaker = f"journalist_{state.detected_journalist_index}"
 
-            if current_role == "journalist":
+            if state.detected_role == "journalist":
                 attributed.append(
                     replace(
                         segment,
-                        speaker_id=current_speaker,
+                        speaker_id=state.detected_speaker,
                         speaker_role="journalist",
                         role_confidence=0.75,
                         role_source="text",
@@ -180,14 +203,14 @@ class PressConferenceRoleAssigner:
                     )
                 )
                 if "?" in text:
-                    current_role = "policy_maker"
-                    current_speaker = "policy_maker_0"
+                    state.detected_role = "policy_maker"
+                    state.detected_speaker = "policy_maker_0"
                 continue
 
             attributed.append(
                 replace(
                     segment,
-                    speaker_id=current_speaker,
+                    speaker_id=state.detected_speaker,
                     speaker_role="policy_maker",
                     role_confidence=0.65,
                     role_source="text",
@@ -195,7 +218,7 @@ class PressConferenceRoleAssigner:
                 )
             )
 
-        return _attach_question_context(attributed)
+        return _attach_question_context(attributed, state)
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,6 +287,9 @@ class PyannoteRoleAssigner:
 
     def load(self) -> None:
         self._get_pipeline()
+
+    def create_state(self) -> SpeakerAttributionState:
+        return SpeakerAttributionState()
 
     @staticmethod
     def _turns(output: object) -> list[_DiarizationTurn]:
@@ -352,6 +378,8 @@ class PyannoteRoleAssigner:
         self,
         audio_path: Path,
         segments: Sequence[TranscriptSegment],
+        *,
+        state: SpeakerAttributionState | None = None,
     ) -> list[TranscriptSegment]:
         try:
             with self._inference_lock:
@@ -399,4 +427,4 @@ class PyannoteRoleAssigner:
                     question_context=None,
                 )
             )
-        return _attach_question_context(attributed)
+        return _attach_question_context(attributed, state)

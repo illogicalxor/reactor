@@ -6,7 +6,11 @@ from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
 
-from .attribution import PressConferenceRoleAssigner, SpeakerRoleAssigner
+from .attribution import (
+    PressConferenceRoleAssigner,
+    SpeakerAttributionState,
+    SpeakerRoleAssigner,
+)
 from .classification import SignalClassifier
 from .domain import AnalysisResult, SegmentPrediction, TranscriptSegment, TurnSignal
 from .media import MediaProcessor
@@ -258,6 +262,10 @@ class VideoAnalysisPipeline:
         self.relevance_gate.load()
         self.classifier.load()
 
+    def create_attribution_state(self) -> SpeakerAttributionState:
+        """Create isolated speaker/turn state for one streaming connection."""
+        return self.role_assigner.create_state()
+
     def analyze_video(
         self,
         video_path: Path,
@@ -282,9 +290,14 @@ class VideoAnalysisPipeline:
         duration_seconds: float,
         asset_context: str = "US equities",
         language: str | None = "en",
+        attribution_state: SpeakerAttributionState | None = None,
     ) -> AnalysisResult:
         raw_segments = self.transcriber.transcribe(audio_path, language)
-        attributed_segments = self.role_assigner.assign(audio_path, raw_segments)
+        attributed_segments = self.role_assigner.assign(
+            audio_path,
+            raw_segments,
+            state=attribution_state,
+        )
         segments = merge_transcript_segments(attributed_segments)
         if not segments:
             raise EmptySpeechError("No speech was detected in the audio track")

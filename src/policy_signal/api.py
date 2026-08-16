@@ -20,7 +20,7 @@ from fastapi import (
     WebSocketDisconnect,
 )
 
-from .attribution import SpeakerAttributionError
+from .attribution import SpeakerAttributionError, SpeakerAttributionState
 from .classification import ClassificationError
 from .config import Settings
 from .domain import SegmentPrediction
@@ -143,6 +143,7 @@ def _analyze_pcm(
     pcm: bytes,
     sample_rate: int,
     asset_context: str,
+    attribution_state: SpeakerAttributionState,
 ):
     duration = len(pcm) / (sample_rate * 2)
     with tempfile.TemporaryDirectory(prefix="policy-signal-stream-") as temporary_directory:
@@ -157,6 +158,7 @@ def _analyze_pcm(
             duration_seconds=duration,
             asset_context=asset_context,
             language="en",
+            attribution_state=attribution_state,
         )
 
 
@@ -180,6 +182,7 @@ async def analyze_stream(websocket: WebSocket) -> None:
     rolling_predictions: list[SegmentPrediction] = []
     rolling_transcript: deque[str] = deque(maxlen=40)
     stream_offset = 0.0
+    attribution_state = get_pipeline().create_attribution_state()
 
     async def process_window(pcm: bytes) -> None:
         nonlocal stream_offset, rolling_predictions
@@ -190,6 +193,7 @@ async def analyze_stream(websocket: WebSocket) -> None:
                 pcm,
                 sample_rate,
                 asset_context,
+                attribution_state,
             )
         except EmptySpeechError:
             await websocket.send_json(
