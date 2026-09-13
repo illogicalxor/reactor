@@ -1,0 +1,5 @@
+event_id,text,asset_context,price_before,price_after,horizon_seconds,spread_bps,expected_move_bps,realized_vol_bps,transaction_cost_bps,confounded,stale_quote,illiquid,uncertain_timing,surprise_bps
+FOMC-2024-03-QA-001,"Inflation is declining and we can begin reducing the policy rate",US equities,5000.0,5008.0,300,2.0,8.0,10.0,1.0,false,false,false,false,3.5
+FOMC-2024-03-QA-002,"Rates must remain higher for longer while inflation stays persistent",US equities,5008.0,5001.0,300,2.0,8.0,10.0,1.0,false,false,false,false,-2.0
+FOMC-2024-03-QA-003,"Thank you all, we will take the next question",US equities,5001.0,5001.5,300,2.0,8.0,10.0,1.0,false,false,false,false,0.0
+FOMC-2024-03-QA-004,"Statement released during unrelated payrolls surprise",US equities,5001.0,5015.0,300,2.0,8.0,10.0,1.0,true,false,false,false,5.0

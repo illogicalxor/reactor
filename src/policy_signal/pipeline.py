@@ -12,6 +12,7 @@ from .attribution import (
     SpeakerRoleAssigner,
 )
 from .classification import SignalClassifier
+from .consensus import ConsensusContext, assess_surprise
 from .domain import AnalysisResult, SegmentPrediction, TranscriptSegment, TurnSignal
 from .media import MediaProcessor
 from .relevance import HeuristicPolicyRelevanceGate, PolicyRelevanceGate, RelevanceAssessment
@@ -246,6 +247,8 @@ class VideoAnalysisPipeline:
         recency_half_life_seconds: float | None = None,
         role_assigner: SpeakerRoleAssigner | None = None,
         relevance_gate: PolicyRelevanceGate | None = None,
+        require_consensus_for_action: bool = True,
+        min_surprise: float = 0.15,
     ) -> None:
         self.media = media
         self.transcriber = transcriber
@@ -254,6 +257,8 @@ class VideoAnalysisPipeline:
         self.recency_half_life_seconds = recency_half_life_seconds
         self.role_assigner = role_assigner or PressConferenceRoleAssigner()
         self.relevance_gate = relevance_gate or HeuristicPolicyRelevanceGate()
+        self.require_consensus_for_action = require_consensus_for_action
+        self.min_surprise = min_surprise
 
     def warmup(self) -> None:
         """Load immutable ASR and classifier weights before accepting live traffic."""
@@ -272,6 +277,7 @@ class VideoAnalysisPipeline:
         *,
         asset_context: str = "US equities",
         language: str | None = "en",
+        consensus: ConsensusContext | None = None,
     ) -> AnalysisResult:
         with tempfile.TemporaryDirectory(prefix="policy-signal-audio-") as temporary_directory:
             audio_path = Path(temporary_directory) / "audio.wav"
@@ -281,6 +287,7 @@ class VideoAnalysisPipeline:
                 duration_seconds=duration,
                 asset_context=asset_context,
                 language=language,
+                consensus=consensus,
             )
 
     def analyze_normalized_audio(
@@ -291,6 +298,7 @@ class VideoAnalysisPipeline:
         asset_context: str = "US equities",
         language: str | None = "en",
         attribution_state: SpeakerAttributionState | None = None,
+        consensus: ConsensusContext | None = None,
     ) -> AnalysisResult:
         raw_segments = self.transcriber.transcribe(audio_path, language)
         attributed_segments = self.role_assigner.assign(
@@ -340,6 +348,15 @@ class VideoAnalysisPipeline:
                 [],
                 neutral_margin=self.neutral_margin,
             )
+            surprise = assess_surprise(
+                0.5,
+                consensus,
+                transcript,
+                base_margin=self.neutral_margin,
+                min_surprise=self.min_surprise,
+                require_consensus_for_action=self.require_consensus_for_action,
+            )
+            ctx = consensus or ConsensusContext()
             return AnalysisResult(
                 label="bullish",
                 confidence=0.5,
@@ -355,6 +372,14 @@ class VideoAnalysisPipeline:
                 directional_coverage=0.0,
                 excluded_segment_count=excluded_count,
                 turns=turns,
+                consensus_mode=ctx.mode,
+                priced_bullish_probability=ctx.priced_bullish,
+                surprise_score=surprise.surprise_score,
+                surprise_confidence=surprise.surprise_confidence,
+                actionable=False,
+                low_signal_reason=surprise.reason or "no_directional_content",
+                neutral_margin_applied=surprise.neutral_margin_applied,
+                information_effect_risk=surprise.information_effect_risk,
                 **audit_counts,
                 segments=[],
             )
@@ -383,10 +408,40 @@ class VideoAnalysisPipeline:
             neutral_margin=self.neutral_margin,
             recency_half_life_seconds=self.recency_half_life_seconds,
         )
+        surprise = assess_surprise(
+            result.bullish_probability,
+            consensus,
+            transcript,
+            base_margin=self.neutral_margin,
+            min_surprise=self.min_surprise,
+            require_consensus_for_action=self.require_consensus_for_action,
+        )
+        ctx = consensus or ConsensusContext()
+        label = "bullish" if surprise.adjusted_bullish >= surprise.adjusted_bearish else "bearish"
+        final_low_signal = result.low_signal or not surprise.actionable
+        reason = result.to_dict().get("low_signal_reason")
+        if not surprise.actionable and surprise.reason:
+            reason = surprise.reason
+        elif result.low_signal and reason is None:
+            reason = "weak_stance"
         return replace(
             result,
+            label=label,
+            confidence=max(surprise.adjusted_bullish, surprise.adjusted_bearish),
+            bullish_probability=surprise.adjusted_bullish,
+            bearish_probability=surprise.adjusted_bearish,
+            signal_strength=surprise.signal_strength,
+            low_signal=final_low_signal,
             directional_coverage=coverage,
             excluded_segment_count=excluded_count,
             turns=turns,
+            consensus_mode=ctx.mode,
+            priced_bullish_probability=ctx.priced_bullish,
+            surprise_score=surprise.surprise_score,
+            surprise_confidence=surprise.surprise_confidence,
+            actionable=surprise.actionable and not result.low_signal,
+            low_signal_reason=reason,
+            neutral_margin_applied=surprise.neutral_margin_applied,
+            information_effect_risk=surprise.information_effect_risk,
             **audit_counts,
         )

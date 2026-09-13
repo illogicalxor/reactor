@@ -129,4 +129,6 @@ def build_pipeline(settings: Settings) -> VideoAnalysisPipeline:
         relevance_gate=relevance_gate,
         neutral_margin=settings.neutral_margin,
         recency_half_life_seconds=settings.offline_recency_half_life_seconds,
+        require_consensus_for_action=settings.require_consensus_for_action,
+        min_surprise=settings.min_surprise,
     )

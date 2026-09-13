@@ -23,6 +23,7 @@ from fastapi import (
 from .attribution import SpeakerAttributionError, SpeakerAttributionState
 from .classification import ClassificationError
 from .config import Settings
+from .consensus import ConsensusContext, assess_surprise, build_consensus
 from .domain import SegmentPrediction
 from .factory import build_pipeline
 from .media import MediaError
@@ -64,6 +65,9 @@ def health() -> dict[str, object]:
         "whisper_model": settings.whisper_model,
         "local_models_only": settings.local_models_only,
         "warmed_on_startup": settings.warm_models_on_startup,
+        "require_consensus_for_action": settings.require_consensus_for_action,
+        "min_surprise": settings.min_surprise,
+        "impact_horizon_seconds": settings.impact_horizon_seconds,
     }
 
 
@@ -86,6 +90,11 @@ async def analyze_video(
     asset_context: Annotated[str, Form(min_length=2, max_length=120)] = (
         settings.default_asset_context
     ),
+    consensus_priced_bullish: Annotated[float | None, Form()] = None,
+    consensus_confidence: Annotated[float, Form()] = 1.0,
+    consensus_source: Annotated[str | None, Form()] = None,
+    consensus_horizon_seconds: Annotated[int, Form()] = 300,
+    consensus_expected_move_bps: Annotated[float | None, Form()] = None,
 ) -> dict[str, object]:
     if file.content_type and not (
         file.content_type.startswith("video/")
@@ -93,6 +102,17 @@ async def analyze_video(
         or file.content_type == "application/octet-stream"
     ):
         raise HTTPException(status_code=415, detail="Upload a video or audio file")
+
+    try:
+        consensus = build_consensus(
+            consensus_priced_bullish,
+            confidence=consensus_confidence,
+            source=consensus_source,
+            horizon_seconds=consensus_horizon_seconds,
+            expected_move_bps=consensus_expected_move_bps,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     raw_suffix = Path(file.filename or "upload.media").suffix.lower()
     suffix = raw_suffix if raw_suffix and len(raw_suffix) <= 10 else ".media"
@@ -105,6 +125,7 @@ async def analyze_video(
                 input_path,
                 asset_context=asset_context,
                 language="en",
+                consensus=consensus,
             )
             return result.to_dict()
     except HTTPException:
@@ -139,11 +160,31 @@ def _validate_stream_configuration(payload: dict[str, object]) -> tuple[int, flo
     return sample_rate, window_seconds, asset_context
 
 
+def _parse_stream_consensus(payload: dict[str, object]) -> ConsensusContext:
+    priced = payload.get("consensus_priced_bullish", payload.get("priced_bullish"))
+    return build_consensus(
+        float(priced) if priced is not None else None,
+        confidence=float(payload.get("consensus_confidence", 1.0)),
+        source=(
+            str(payload["consensus_source"])
+            if payload.get("consensus_source") is not None
+            else None
+        ),
+        horizon_seconds=int(payload.get("consensus_horizon_seconds", 300)),
+        expected_move_bps=(
+            float(payload["consensus_expected_move_bps"])
+            if payload.get("consensus_expected_move_bps") is not None
+            else None
+        ),
+    )
+
+
 def _analyze_pcm(
     pcm: bytes,
     sample_rate: int,
     asset_context: str,
     attribution_state: SpeakerAttributionState,
+    consensus: ConsensusContext | None = None,
 ):
     duration = len(pcm) / (sample_rate * 2)
     with tempfile.TemporaryDirectory(prefix="policy-signal-stream-") as temporary_directory:
@@ -159,6 +200,7 @@ def _analyze_pcm(
             asset_context=asset_context,
             language="en",
             attribution_state=attribution_state,
+            consensus=consensus,
         )
 
 
@@ -172,6 +214,7 @@ async def analyze_stream(websocket: WebSocket) -> None:
         if not isinstance(configuration, dict):
             raise ValueError("The initial configuration must be a JSON object")
         sample_rate, window_seconds, asset_context = _validate_stream_configuration(configuration)
+        stream_consensus = _parse_stream_consensus(configuration)
     except (ValueError, TypeError, json.JSONDecodeError) as exc:
         await websocket.send_json({"type": "error", "detail": str(exc)})
         await websocket.close(code=1003)
@@ -194,6 +237,7 @@ async def analyze_stream(websocket: WebSocket) -> None:
                 sample_rate,
                 asset_context,
                 attribution_state,
+                stream_consensus,
             )
         except EmptySpeechError:
             await websocket.send_json(
@@ -225,6 +269,34 @@ async def analyze_stream(websocket: WebSocket) -> None:
             model=result.model,
             neutral_margin=settings.neutral_margin,
             recency_half_life_seconds=settings.recency_half_life_seconds,
+        )
+        surprise = assess_surprise(
+            rolling.bullish_probability,
+            stream_consensus,
+            " ".join(rolling_transcript),
+            base_margin=settings.neutral_margin,
+            min_surprise=settings.min_surprise,
+            require_consensus_for_action=settings.require_consensus_for_action,
+        )
+        rolling_label = (
+            "bullish" if surprise.adjusted_bullish >= surprise.adjusted_bearish else "bearish"
+        )
+        rolling = replace(
+            rolling,
+            label=rolling_label,
+            confidence=max(surprise.adjusted_bullish, surprise.adjusted_bearish),
+            bullish_probability=surprise.adjusted_bullish,
+            bearish_probability=surprise.adjusted_bearish,
+            signal_strength=surprise.signal_strength,
+            low_signal=rolling.low_signal or not surprise.actionable,
+            consensus_mode=stream_consensus.mode,
+            priced_bullish_probability=stream_consensus.priced_bullish,
+            surprise_score=surprise.surprise_score,
+            surprise_confidence=surprise.surprise_confidence,
+            actionable=surprise.actionable and not rolling.low_signal,
+            low_signal_reason=surprise.reason,
+            neutral_margin_applied=surprise.neutral_margin_applied,
+            information_effect_risk=surprise.information_effect_risk,
         )
         await websocket.send_json(
             {

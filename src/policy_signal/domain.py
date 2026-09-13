@@ -114,6 +114,15 @@ class AnalysisResult:
     unknown_speaker_segment_count: int = 0
     neutral_segment_count: int = 0
     irrelevant_segment_count: int = 0
+    # Consensus / surprise layer. Stance alone is not market impact.
+    consensus_mode: str = "none"
+    priced_bullish_probability: float | None = None
+    surprise_score: float = 0.0
+    surprise_confidence: float = 0.0
+    actionable: bool = False
+    low_signal_reason: str | None = None
+    neutral_margin_applied: float = 0.12
+    information_effect_risk: bool = False
     segments: list[SegmentPrediction] = field(default_factory=list)
     turns: list[TurnSignal] = field(default_factory=list)
 

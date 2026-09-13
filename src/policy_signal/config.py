@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     max_upload_mb: int = 500
     max_duration_seconds: int = 7200
     neutral_margin: float = 0.12
+    # Stance without consensus is not tradable. Require explicit consensus
+    # for an actionable signal; otherwise the pipeline abstains.
+    require_consensus_for_action: bool = True
+    min_surprise: float = 0.15
+    impact_horizon_seconds: int = 300
     # Full recordings should not be dominated by arbitrary closing remarks.
     # Recency remains useful for the rolling streaming signal below.
     offline_recency_half_life_seconds: float | None = None
